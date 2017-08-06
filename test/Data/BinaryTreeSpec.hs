@@ -1,22 +1,21 @@
-module Data.RedBlackTreeSpec (spec) where
+module Data.BinaryTreeSpec (spec) where
 
 import Test.Hspec
-import Data.RedBlackTree
-
+import Data.BinaryTree
 
 
 spec :: Spec
 spec = do
-  let leftChildContent = TreeNode Red 2 :: TreeNode Int
-  let rightChildContent = TreeNode Red 3 :: TreeNode Int
-  let treeContent = TreeNode Red 1 :: TreeNode Int
-  let emptyBranchContent = TreeNode Black 4 :: TreeNode Int
+  let leftChildContent = 2
+  let rightChildContent = 3
+  let treeContent = 1
+  let emptyBranchContent = 4
   let emptyTreeBranch = TreeBranch Leaf emptyBranchContent Leaf
   let leftChild = Branch Leaf leftChildContent Leaf
   let rightChild = Branch Leaf rightChildContent Leaf
   let tree = Branch leftChild treeContent rightChild
   let emptyBranch = Branch Leaf emptyBranchContent Leaf
-  let leaf = Leaf :: RedBlackTree Int
+  let leaf = Leaf :: BinaryTree Int
 
   describe "goLeft" $ do
     it "returns a new zipper focusing on the left child of current tree" $ do
@@ -27,7 +26,7 @@ spec = do
     it "returns a new zipper with a LeftTree direction, with node's data on top of its direction list" $ do
       let Just (_, [direction]) = goLeft (tree, [])
 
-      direction `shouldBe` LeftTree (TreeNode Red 1) rightChild
+      direction `shouldBe` LeftTree 1 rightChild
 
     it "returns Nothing if tree is focused on a leaf" $ do
       let maybeZipper = goLeft (leaf, [])
@@ -43,7 +42,7 @@ spec = do
     it "returns a new zipper with a RightTree direction with node's data on top of its direction list" $ do
       let Just (_, [direction]) = goRight (tree, [])
 
-      direction `shouldBe` RightTree (TreeNode Red 1) leftChild
+      direction `shouldBe` RightTree 1 leftChild
 
     it "returns Nothing if tree is focused on a leaf" $ do
       let maybeZipper = goLeft (leaf, [])
@@ -51,9 +50,9 @@ spec = do
       maybeZipper `shouldBe` Nothing
 
   describe "goUp" $ do
-    let treeContent = TreeNode Red 2
+    let treeContent = 2
     let treeBranch = TreeBranch Leaf treeContent Leaf
-    let parentContent = TreeNode Red 1
+    let parentContent = 1
     let expectedLeftChild = Branch Leaf treeContent Leaf
 
     it "returns a new zipper focusing on the current tree's parent" $ do
@@ -73,7 +72,7 @@ spec = do
 
   describe "getTreeRoot" $
     it "returns the root branch of the tree" $ do
-      let latestNode = TreeNode Red 5
+      let latestNode = 5
       let grandChild = Branch Leaf latestNode Leaf
       let grandChildBranch = TreeBranch Leaf latestNode Leaf
       let grandChildDirections = [ LeftTree rightChildContent Leaf
@@ -89,7 +88,7 @@ spec = do
 
   describe "appendLeftChild" $ do
     it "returns InsertOk with a BranchZipper focusing on the child inserted left" $ do
-      let nodeToAppend = TreeNode Red 0
+      let nodeToAppend = 0
 
       let expectedBranch = TreeBranch Leaf nodeToAppend Leaf
       let expectedDirection = LeftTree emptyBranchContent Leaf
@@ -99,7 +98,7 @@ spec = do
       insertResult `shouldBe` InsertOk expectedBranch expectedDirection
 
     it "returns InsertNotYet if the tree already has a left child" $ do
-      let nodeToInsert = TreeNode Red 0
+      let nodeToInsert = 0
 
       let treeBranch = TreeBranch leftChild treeContent rightChild
       let expectedDirectionToObstuction = LeftTree treeContent rightChild
@@ -111,7 +110,7 @@ spec = do
 
   describe "appendRightChild" $ do
     it "returns InsertOk with a BranchZipper focusing on the child inserted right" $ do
-      let nodeToAppend = TreeNode Red 1
+      let nodeToAppend = 1
 
       let expectedBranch = TreeBranch Leaf nodeToAppend Leaf
       let expectedDirection = RightTree emptyBranchContent Leaf
@@ -121,7 +120,7 @@ spec = do
       insertResult `shouldBe` InsertOk expectedBranch expectedDirection
 
     it "returns InsertNotYet if the tree already has a left child" $ do
-      let nodeToInsert = TreeNode Red 6
+      let nodeToInsert = 6
 
       let treeBranch = TreeBranch leftChild treeContent rightChild
       let expectedDirectionToObstuction = RightTree treeContent leftChild
@@ -133,16 +132,16 @@ spec = do
 
 
   describe "binaryTreeInsert" $ do
-    let node1 = TreeNode Black 10
-    let node2 = TreeNode Red 8
-    let node3 = TreeNode Red 12
-    let node4 = TreeNode Black 7
-    let node5 = TreeNode Black 9
-    let node6 = TreeNode Black 11
-    let node7 = TreeNode Black 13
+    let node1 = 10
+    let node2 = 8
+    let node3 = 12
+    let node4 = 7
+    let node5 = 9
+    let node6 = 11
+    let node7 = 13
 
     it "inserts at the correct position" $ do
-      let newContent = TreeNode Red 8
+      let newContent = 8
       let startZipper = (emptyBranch, [])
       let newZipper = binaryTreeInsert startZipper newContent
 

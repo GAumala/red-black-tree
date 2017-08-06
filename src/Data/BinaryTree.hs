@@ -1,12 +1,10 @@
-module Data.RedBlackTree (
-  NodeColor (Red, Black),
-  RedBlackTree (Leaf, Branch),
+module Data.BinaryTree (
+  BinaryTree (Leaf, Branch),
   TreeBranch (TreeBranch),
   TreeDirection (LeftTree, RightTree),
   TreeDirections,
   TreeInsertResult (InsertOk, InsertNotYet, InsertFail),
-  TreeNode (TreeNode),
-  RBZipper,
+  TreeZipper,
 
   appendLeftChild,
   appendRightChild,
@@ -19,28 +17,13 @@ module Data.RedBlackTree (
 
 import Data.Maybe
 
--- Possible colors for a node in the tree
-data NodeColor = Red | Black deriving (Show, Eq, Ord)
-
-data (Ord a) => TreeNode a = TreeNode {
-  nodeColor :: NodeColor,
-  content :: a
-} deriving (Show)
-
-instance (Ord a) => Ord (TreeNode a) where
-  (TreeNode _ lcontent) <= (TreeNode _ rcontent) =
-    lcontent <= rcontent
-
-instance (Ord a) => Eq (TreeNode a) where
-  (TreeNode _ lcontent) == (TreeNode _ rcontent) =
-    lcontent == rcontent
 
 -- A RedBlackTree is either a leaf (empty) or a node with 2 children, left and
 -- right
-data (Ord a) => RedBlackTree a = Leaf
-  | Branch (RedBlackTree a) (TreeNode a) (RedBlackTree a) deriving (Eq, Ord)
+data (Ord a) => BinaryTree a = Leaf
+  | Branch (BinaryTree a) a (BinaryTree a) deriving (Eq, Ord)
 
-instance (Ord a, Show a) => Show (RedBlackTree a) where
+instance (Ord a, Show a) => Show (BinaryTree a) where
   show tree = prettyPrintTree tree 0
     where
       addSpaces num = replicate num ' '
@@ -52,16 +35,20 @@ instance (Ord a, Show a) => Show (RedBlackTree a) where
 
 
 -- Directions to reconstruct any parent of a focused node.
-data (Ord a) => TreeDirection a = LeftTree (TreeNode a) (RedBlackTree a)
-  | RightTree (TreeNode a) (RedBlackTree a) deriving (Show, Eq, Ord)
+data (Ord a) => TreeDirection a = LeftTree a (BinaryTree a)
+  | RightTree a (BinaryTree a) deriving (Show, Eq, Ord)
 
 -- List of directions
 type TreeDirections a = [TreeDirection a]
 
-type RBZipper a = (RedBlackTree a, TreeDirections a)
+type TreeZipper a = (BinaryTree a, TreeDirections a)
 
-data (Ord a) => TreeBranch a = TreeBranch (RedBlackTree a) (TreeNode a) (RedBlackTree a)
-  deriving (Show, Eq, Ord)
+data (Ord a) => TreeBranch a = TreeBranch (BinaryTree a) a (BinaryTree a)
+  deriving (Eq, Ord)
+
+instance (Ord a, Show a) => Show (TreeBranch a) where
+  show (TreeBranch leftChild content rightChild) =
+    show (Branch leftChild content rightChild) 
 
 type BranchZipper a = (TreeBranch a, TreeDirections a)
 
@@ -73,27 +60,27 @@ type BranchZipper a = (TreeBranch a, TreeDirections a)
 -- InsertFail Fatal error, can't create direction to new node
 data TreeInsertResult a =
   InsertOk (TreeBranch a) (TreeDirection a)
-  | InsertNotYet (RedBlackTree a) (TreeDirection a) (TreeNode a)
+  | InsertNotYet (BinaryTree a) (TreeDirection a) a
   | InsertFail deriving (Show, Eq)
 
 isLeftTreeDirection :: (Ord a) => TreeDirection a -> Bool
 isLeftTreeDirection (LeftTree _ _) = True
 isLeftTreeDirection (RightTree _ _) = False
 
-getTreeContent :: (Ord a) => RedBlackTree a -> Maybe (TreeNode a)
+getTreeContent :: (Ord a) => BinaryTree a -> Maybe a
 getTreeContent (Branch _ content _) = Just content
 getTreeContent Leaf = Nothing
 
 -- Move the zipper down to the left child, returns nothing if focused node is
 --  leaf
-goLeft :: (Ord a) => RBZipper a -> Maybe (RBZipper a)
+goLeft :: (Ord a) => TreeZipper a -> Maybe (TreeZipper a)
 goLeft (Leaf, _) = Nothing
 goLeft (Branch leftChild treeNode rightChild, xs) =
   Just (leftChild, LeftTree treeNode rightChild:xs)
 
 -- Move the zipper down to the right child, returns nothing if focused node is
 -- a leaf
-goRight :: (Ord a) => RBZipper a -> Maybe (RBZipper a)
+goRight :: (Ord a) => TreeZipper a -> Maybe (TreeZipper a)
 goRight (Leaf, _) = Nothing
 goRight (Branch leftChild treeNode rightChild, xs) =
   Just (rightChild, RightTree treeNode leftChild:xs)
@@ -115,7 +102,7 @@ getTreeRoot zipper = case goUp zipper of
   Just prevZipper -> getTreeRoot prevZipper
   Nothing -> zipper
 
-appendLeftChild :: (Ord a) => TreeBranch a -> TreeNode a -> TreeInsertResult a
+appendLeftChild :: (Ord a) => TreeBranch a -> a -> TreeInsertResult a
 appendLeftChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   if leftChild == Leaf then
     InsertOk newBranch newDirection
@@ -124,7 +111,7 @@ appendLeftChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   where newBranch = TreeBranch Leaf nodeToAppend Leaf
         newDirection = LeftTree treeContent rightChild
 
-appendRightChild :: (Ord a) => TreeBranch a -> TreeNode a -> TreeInsertResult a
+appendRightChild :: (Ord a) => TreeBranch a -> a -> TreeInsertResult a
 appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   if rightChild == Leaf then
     InsertOk newBranch newDirection
@@ -139,11 +126,11 @@ insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
 insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild childToInsert) =
   binaryTreeInsert (existingChild, directionToChild:treeDirections) childToInsert
 
-branchZipperToTreeZipper :: (Ord a) => BranchZipper a -> RBZipper a
+branchZipperToTreeZipper :: (Ord a) => BranchZipper a -> TreeZipper a
 branchZipperToTreeZipper (TreeBranch leftChild content rightChild, xs) =
   (Branch leftChild content rightChild, xs)
 
-branchZipperInsert :: (Ord a) => BranchZipper a -> TreeNode a -> BranchZipper a
+branchZipperInsert :: (Ord a) => BranchZipper a -> a -> BranchZipper a
 branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode =
   insertOrGoDown xs (appendFunction focusedBranch newNode)
   where
@@ -151,7 +138,7 @@ branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode =
     appendFunction = if newNode <= treeNode then appendLeftChild
                                             else appendRightChild
 
-binaryTreeInsert :: (Ord a) => RBZipper a -> TreeNode a -> BranchZipper a
+binaryTreeInsert :: (Ord a) => TreeZipper a -> a -> BranchZipper a
 binaryTreeInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
 binaryTreeInsert (Branch leftChild treeNode rightChild, xs) newNode =
   branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode
