@@ -1,6 +1,7 @@
 module Data.RedBlackTree (
   NodeColor (Red, Black),
   RedBlackTree (Leaf, Branch),
+  TreeBranch (TreeBranch),
   TreeDirection (LeftTree, RightTree),
   TreeDirections,
   TreeInsertResult (InsertOk, InsertNotYet, InsertFail),
@@ -10,8 +11,9 @@ module Data.RedBlackTree (
   appendLeftChild,
   appendRightChild,
   binaryTreeInsert,
+  branchZipperInsert,
+  getTreeRoot,
   goLeft,
-  goToTop,
   goUp,
   goRight) where
 
@@ -58,7 +60,10 @@ type TreeDirections a = [TreeDirection a]
 
 type RBZipper a = (RedBlackTree a, TreeDirections a)
 
-type BranchTuple a = (RedBlackTree a, TreeNode a, RedBlackTree a)
+data (Ord a) => TreeBranch a = TreeBranch (RedBlackTree a) (TreeNode a) (RedBlackTree a)
+  deriving (Show, Eq, Ord)
+
+type BranchZipper a = (TreeBranch a, TreeDirections a)
 
 -- The result from inserting a node to the left or right of a tree can be:
 -- (InsertOk insertedTree directionToNewTree) if there is a leaf at the
@@ -67,13 +72,17 @@ type BranchTuple a = (RedBlackTree a, TreeNode a, RedBlackTree a)
 -- already is a tree obstructing the desired position, we must go further down
 -- InsertFail Fatal error, can't create direction to new node
 data TreeInsertResult a =
-  InsertOk (BranchTuple a) (TreeDirection a)
+  InsertOk (TreeBranch a) (TreeDirection a)
   | InsertNotYet (RedBlackTree a) (TreeDirection a) (TreeNode a)
   | InsertFail deriving (Show, Eq)
 
 isLeftTreeDirection :: (Ord a) => TreeDirection a -> Bool
 isLeftTreeDirection (LeftTree _ _) = True
 isLeftTreeDirection (RightTree _ _) = False
+
+getTreeContent :: (Ord a) => RedBlackTree a -> Maybe (TreeNode a)
+getTreeContent (Branch _ content _) = Just content
+getTreeContent Leaf = Nothing
 
 -- Move the zipper down to the left child, returns nothing if focused node is
 --  leaf
@@ -90,52 +99,59 @@ goRight (Branch leftChild treeNode rightChild, xs) =
   Just (rightChild, RightTree treeNode leftChild:xs)
 
 -- Move the zipper up to the parent, returns nothing directions list is empty
-goUp :: (Ord a) => RBZipper a -> Maybe (RBZipper a)
+goUp :: (Ord a) => BranchZipper a -> Maybe (BranchZipper a)
 goUp (_, []) = Nothing
-goUp (tree, LeftTree treeNode rightChild:xs) =
-  Just (Branch tree treeNode rightChild, xs)
-goUp (tree, RightTree treeNode leftChild:xs) =
-  Just (Branch leftChild treeNode tree, xs)
+goUp (TreeBranch leftChild content rightChild, direction:xs) =
+  case direction of
+    LeftTree parentContent rightSibling ->
+      Just (TreeBranch currentTree parentContent rightSibling, xs)
+    RightTree parentContent leftSibling ->
+      Just (TreeBranch leftSibling parentContent currentTree, xs)
+  where currentTree = Branch leftChild content rightChild
 
-goToTop :: (Ord a) => RBZipper a -> RBZipper a
-goToTop (tree, []) = (tree, [])
-goToTop zipper = case goUp zipper of
-  Just prevZipper -> goToTop prevZipper
+getTreeRoot :: (Ord a) => BranchZipper a -> BranchZipper a
+getTreeRoot (branch, []) = (branch, [])
+getTreeRoot zipper = case goUp zipper of
+  Just prevZipper -> getTreeRoot prevZipper
   Nothing -> zipper
 
-appendLeftChild :: (Ord a) => BranchTuple a -> TreeNode a -> TreeInsertResult a
-appendLeftChild (leftChild, treeContent, rightChild) childToAppend =
+appendLeftChild :: (Ord a) => TreeBranch a -> TreeNode a -> TreeInsertResult a
+appendLeftChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   if leftChild == Leaf then
-    InsertOk newBranchTuple newDirection
+    InsertOk newBranch newDirection
   else
-    InsertNotYet leftChild newDirection childToAppend
-  where newChildTree = Branch Leaf childToAppend Leaf
-        newBranchTuple = (newChildTree, treeContent, rightChild)
+    InsertNotYet leftChild newDirection nodeToAppend
+  where newBranch = TreeBranch Leaf nodeToAppend Leaf
         newDirection = LeftTree treeContent rightChild
 
-appendRightChild :: (Ord a) => BranchTuple a -> TreeNode a -> TreeInsertResult a
-appendRightChild (leftChild, treeContent, rightChild) childToAppend =
+appendRightChild :: (Ord a) => TreeBranch a -> TreeNode a -> TreeInsertResult a
+appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   if rightChild == Leaf then
-    InsertOk newBranchTuple newDirection
+    InsertOk newBranch newDirection
   else
-    InsertNotYet rightChild newDirection childToAppend
-  where newChildTree = Branch Leaf childToAppend Leaf
-        newBranchTuple = (leftChild, treeContent, newChildTree)
+    InsertNotYet rightChild newDirection nodeToAppend
+  where newBranch = TreeBranch Leaf nodeToAppend Leaf
         newDirection = RightTree treeContent leftChild
 
-insertOrGoDown :: (Ord a) => TreeDirections a -> TreeInsertResult a -> RBZipper a
-insertOrGoDown treeDirections (InsertOk (leftChild, nodeContent, rightChild) directionToNewTree) =
-  (insertedTree, directionToNewTree:treeDirections)
-  where insertedTree = if isLeftTreeDirection directionToNewTree
-                        then leftChild else rightChild
+insertOrGoDown :: (Ord a) => TreeDirections a -> TreeInsertResult a -> BranchZipper a
+insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
+  (newBranch, newDirection:treeDirections)
 insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild childToInsert) =
   binaryTreeInsert (existingChild, directionToChild:treeDirections) childToInsert
 
-binaryTreeInsert :: (Ord a) => RBZipper a -> TreeNode a -> RBZipper a
-binaryTreeInsert (Leaf, xs) newNode = (Branch Leaf newNode Leaf, xs)
-binaryTreeInsert (Branch leftChild treeNode rightChild, xs) newNode =
-  insertOrGoDown xs (appendFunction focusedTreeTuple newNode)
+branchZipperToTreeZipper :: (Ord a) => BranchZipper a -> RBZipper a
+branchZipperToTreeZipper (TreeBranch leftChild content rightChild, xs) =
+  (Branch leftChild content rightChild, xs)
+
+branchZipperInsert :: (Ord a) => BranchZipper a -> TreeNode a -> BranchZipper a
+branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode =
+  insertOrGoDown xs (appendFunction focusedBranch newNode)
   where
-    focusedTreeTuple = (leftChild, treeNode, rightChild)
+    focusedBranch = TreeBranch leftChild treeNode rightChild
     appendFunction = if newNode <= treeNode then appendLeftChild
                                             else appendRightChild
+
+binaryTreeInsert :: (Ord a) => RBZipper a -> TreeNode a -> BranchZipper a
+binaryTreeInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
+binaryTreeInsert (Branch leftChild treeNode rightChild, xs) newNode =
+  branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode
