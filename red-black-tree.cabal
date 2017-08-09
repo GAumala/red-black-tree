@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Data.BinaryTree
+                     , Data.RedBlackTree
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 
@@ -23,6 +24,7 @@ test-suite red-black-tree-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   other-modules:       Data.BinaryTreeSpec
+                     , Data.RedBlackTreeSpec
   main-is:             Spec.hs
   build-depends:       base
                      , red-black-tree

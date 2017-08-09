@@ -18,36 +18,28 @@ spec = do
   let leaf = Leaf :: BinaryTree Int
 
   describe "goLeft" $ do
+    let branch = TreeBranch leftChild treeContent rightChild
     it "returns a new zipper focusing on the left child of current tree" $ do
-      let Just (newTree, _) = goLeft (tree, [])
+      let (newTree, _) = goLeft (branch, [])
 
       newTree `shouldBe` leftChild
 
     it "returns a new zipper with a LeftTree direction, with node's data on top of its direction list" $ do
-      let Just (_, [direction]) = goLeft (tree, [])
+      let (_, [direction]) = goLeft (branch, [])
 
       direction `shouldBe` LeftTree 1 rightChild
 
-    it "returns Nothing if tree is focused on a leaf" $ do
-      let maybeZipper = goLeft (leaf, [])
-
-      maybeZipper `shouldBe` Nothing
-
   describe "goRight" $ do
+    let branch = TreeBranch leftChild treeContent rightChild
     it "returns a new zipper focusing on the right child of current tree" $ do
-      let Just (newTree, _) = goRight (tree, [])
+      let (newTree, _) = goRight (branch, [])
 
       newTree `shouldBe` rightChild
 
     it "returns a new zipper with a RightTree direction with node's data on top of its direction list" $ do
-      let Just (_, [direction]) = goRight (tree, [])
+      let (_, [direction]) = goRight (branch, [])
 
       direction `shouldBe` RightTree 1 leftChild
-
-    it "returns Nothing if tree is focused on a leaf" $ do
-      let maybeZipper = goLeft (leaf, [])
-
-      maybeZipper `shouldBe` Nothing
 
   describe "goUp" $ do
     let treeContent = 2

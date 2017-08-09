@@ -1,5 +1,6 @@
 module Data.BinaryTree (
   BinaryTree (Leaf, Branch),
+  BranchZipper,
   TreeBranch (TreeBranch),
   TreeDirection (LeftTree, RightTree),
   TreeDirections,
@@ -9,11 +10,13 @@ module Data.BinaryTree (
   appendLeftChild,
   appendRightChild,
   binaryTreeInsert,
+  branch2Tree,
   branchZipperInsert,
   getTreeRoot,
   goLeft,
   goUp,
-  goRight) where
+  goRight,
+  reconstructAncestor) where
 
 import Data.Maybe
 
@@ -48,7 +51,7 @@ data (Ord a) => TreeBranch a = TreeBranch (BinaryTree a) a (BinaryTree a)
 
 instance (Ord a, Show a) => Show (TreeBranch a) where
   show (TreeBranch leftChild content rightChild) =
-    show (Branch leftChild content rightChild) 
+    show (Branch leftChild content rightChild)
 
 type BranchZipper a = (TreeBranch a, TreeDirections a)
 
@@ -71,30 +74,36 @@ getTreeContent :: (Ord a) => BinaryTree a -> Maybe a
 getTreeContent (Branch _ content _) = Just content
 getTreeContent Leaf = Nothing
 
+branch2Tree :: (Ord a) => TreeBranch a -> BinaryTree a
+branch2Tree (TreeBranch leftChild content rightChild) =
+  Branch leftChild content rightChild
+
 -- Move the zipper down to the left child, returns nothing if focused node is
 --  leaf
-goLeft :: (Ord a) => TreeZipper a -> Maybe (TreeZipper a)
-goLeft (Leaf, _) = Nothing
-goLeft (Branch leftChild treeNode rightChild, xs) =
-  Just (leftChild, LeftTree treeNode rightChild:xs)
+goLeft :: (Ord a) => BranchZipper a -> TreeZipper a
+goLeft (TreeBranch leftChild treeNode rightChild, xs) =
+  (leftChild, LeftTree treeNode rightChild:xs)
 
 -- Move the zipper down to the right child, returns nothing if focused node is
 -- a leaf
-goRight :: (Ord a) => TreeZipper a -> Maybe (TreeZipper a)
-goRight (Leaf, _) = Nothing
-goRight (Branch leftChild treeNode rightChild, xs) =
-  Just (rightChild, RightTree treeNode leftChild:xs)
+goRight :: (Ord a) => BranchZipper a -> TreeZipper a
+goRight (TreeBranch leftChild treeNode rightChild, xs) =
+  (rightChild, RightTree treeNode leftChild:xs)
+
+reconstructAncestor :: (Ord a) => TreeBranch a -> TreeDirection a -> TreeBranch a
+reconstructAncestor currentBranch directionFromAncestor =
+  case directionFromAncestor of
+    LeftTree parentContent rightSibling ->
+      TreeBranch currentTree parentContent rightSibling
+    RightTree parentContent leftSibling ->
+      TreeBranch leftSibling parentContent currentTree
+  where currentTree = branch2Tree currentBranch
 
 -- Move the zipper up to the parent, returns nothing directions list is empty
 goUp :: (Ord a) => BranchZipper a -> Maybe (BranchZipper a)
 goUp (_, []) = Nothing
-goUp (TreeBranch leftChild content rightChild, direction:xs) =
-  case direction of
-    LeftTree parentContent rightSibling ->
-      Just (TreeBranch currentTree parentContent rightSibling, xs)
-    RightTree parentContent leftSibling ->
-      Just (TreeBranch leftSibling parentContent currentTree, xs)
-  where currentTree = Branch leftChild content rightChild
+goUp (currentBranch, direction:xs) =
+  Just (reconstructAncestor currentBranch direction, xs)
 
 getTreeRoot :: (Ord a) => BranchZipper a -> BranchZipper a
 getTreeRoot (branch, []) = (branch, [])
