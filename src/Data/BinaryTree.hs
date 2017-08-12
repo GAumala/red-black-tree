@@ -1,8 +1,9 @@
 module Data.BinaryTree (
   BinaryTree (Leaf, Branch),
+  BranchType (LeftBranch, RightBranch),
   BranchZipper,
   TreeBranch (TreeBranch),
-  TreeDirection (LeftTree, RightTree),
+  TreeDirection (TreeDirection),
   TreeDirections,
   TreeInsertResult (InsertOk, InsertNotYet, InsertFail),
   TreeZipper,
@@ -37,9 +38,10 @@ instance (Ord a, Show a) => Show (BinaryTree a) where
         addSpaces (spaces + 2) ++ "R:" ++ prettyPrintTree rightTree (spaces + 2) ++ "\n"
 
 
+data BranchType = LeftBranch | RightBranch deriving (Show, Eq, Ord)
 -- Directions to reconstruct any parent of a focused node.
-data (Ord a) => TreeDirection a = LeftTree a (BinaryTree a)
-  | RightTree a (BinaryTree a) deriving (Show, Eq, Ord)
+data (Ord a) => TreeDirection a = TreeDirection BranchType a (BinaryTree a)
+  deriving (Show, Eq, Ord)
 
 -- List of directions
 type TreeDirections a = [TreeDirection a]
@@ -67,8 +69,7 @@ data TreeInsertResult a =
   | InsertFail deriving (Show, Eq)
 
 isLeftTreeDirection :: (Ord a) => TreeDirection a -> Bool
-isLeftTreeDirection (LeftTree _ _) = True
-isLeftTreeDirection (RightTree _ _) = False
+isLeftTreeDirection (TreeDirection branchType _ _) = branchType == LeftBranch
 
 getTreeContent :: (Ord a) => BinaryTree a -> Maybe a
 getTreeContent (Branch _ content _) = Just content
@@ -82,22 +83,20 @@ branch2Tree (TreeBranch leftChild content rightChild) =
 --  leaf
 goLeft :: (Ord a) => BranchZipper a -> TreeZipper a
 goLeft (TreeBranch leftChild treeNode rightChild, xs) =
-  (leftChild, LeftTree treeNode rightChild:xs)
+  (leftChild, TreeDirection LeftBranch treeNode rightChild:xs)
 
 -- Move the zipper down to the right child, returns nothing if focused node is
 -- a leaf
 goRight :: (Ord a) => BranchZipper a -> TreeZipper a
 goRight (TreeBranch leftChild treeNode rightChild, xs) =
-  (rightChild, RightTree treeNode leftChild:xs)
+  (rightChild, TreeDirection RightBranch treeNode leftChild:xs)
 
 reconstructAncestor :: (Ord a) => TreeBranch a -> TreeDirection a -> TreeBranch a
-reconstructAncestor currentBranch directionFromAncestor =
-  case directionFromAncestor of
-    LeftTree parentContent rightSibling ->
-      TreeBranch currentTree parentContent rightSibling
-    RightTree parentContent leftSibling ->
-      TreeBranch leftSibling parentContent currentTree
-  where currentTree = branch2Tree currentBranch
+reconstructAncestor currentBranch (TreeDirection branchType parentContent sibling) =
+  if branchType == LeftBranch
+    then TreeBranch currentTree parentContent sibling
+    else TreeBranch sibling parentContent currentTree
+    where currentTree = branch2Tree currentBranch
 
 -- Move the zipper up to the parent, returns nothing directions list is empty
 goUp :: (Ord a) => BranchZipper a -> Maybe (BranchZipper a)
@@ -118,7 +117,7 @@ appendLeftChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   else
     InsertNotYet leftChild newDirection nodeToAppend
   where newBranch = TreeBranch Leaf nodeToAppend Leaf
-        newDirection = LeftTree treeContent rightChild
+        newDirection = TreeDirection LeftBranch treeContent rightChild
 
 appendRightChild :: (Ord a) => TreeBranch a -> a -> TreeInsertResult a
 appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
@@ -127,7 +126,7 @@ appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   else
     InsertNotYet rightChild newDirection nodeToAppend
   where newBranch = TreeBranch Leaf nodeToAppend Leaf
-        newDirection = RightTree treeContent leftChild
+        newDirection = TreeDirection RightBranch treeContent leftChild
 
 insertOrGoDown :: (Ord a) => TreeDirections a -> TreeInsertResult a -> BranchZipper a
 insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
