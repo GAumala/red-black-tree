@@ -34,6 +34,9 @@ data TreeFamily a =
 isColor :: (Ord a) => RedBlackNode a -> RedBlack -> Bool
 isColor (RedBlackNode color _) expectedColor = color == expectedColor
 
+branchIsColor :: (Ord a) => TreeBranch (RedBlackNode a) -> RedBlack -> Bool
+branchIsColor (TreeBranch leftChild node rightChild) = isColor node
+
 paintItBlack :: (Ord a) => RedBlackNode a -> RedBlackNode a
 paintItBlack (RedBlackNode _ item) = RedBlackNode Black item
 
@@ -58,6 +61,21 @@ handleCase1 (TreeBranch leftChild content rightChild) =
 
 handleInsertedTreeFamily :: (Ord a) => TreeFamily (RedBlackNode a) -> RedBlackTree a
 handleInsertedTreeFamily (IsRoot rootBranch) = handleCase1 rootBranch
+handleInsertedTreeFamily (HasParent direction insertedBranch) =
+  branch2Tree parentBranch
+  where parentBranch = reconstructAncestor insertedBranch direction
+handleInsertedTreeFamily (HasGrandparent directions grandparentDirection
+  parentDirection insertedBranch) =
+    if parentBranch `branchIsColor` Black
+      then branch2Tree rootBranch
+      else handleCase1 rootBranch
+  where parentBranch = reconstructAncestor insertedBranch parentDirection
+        grandparentBranch = reconstructAncestor parentBranch grandparentDirection
+        grandparentZipper = (grandparentBranch, directions)
+        (rootBranch, _) = getTreeRoot grandparentZipper
+
+
+
 
 insert :: (Ord a) => RedBlackTree a -> a -> RedBlackTree a
 insert treeRoot newItem = handleInsertedTreeFamily treeFamily
