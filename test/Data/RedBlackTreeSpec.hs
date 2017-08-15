@@ -53,6 +53,28 @@ case4FamilyAndExpectation = (treeFamily, expectedCase)
         expectedCase = Case4 [ grandparentDirection, rootDirection ]
                        parentBranch newBranch
 
+invertedCase4FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
+invertedCase4FamilyAndExpectation = (treeFamily, expectedCase)
+  where rootNode = RedBlackNode Black 10
+        granduncleNode = RedBlackNode Red 15
+        grandparentNode = RedBlackNode Black 5
+        parentNode = RedBlackNode Red 7
+        uncleNode = RedBlackNode Black 3
+        newNode = RedBlackNode Red 6
+        newTree = branch2Tree newBranch
+        uncleTree = Branch Leaf uncleNode Leaf
+        granduncleTree = Branch Leaf granduncleNode Leaf
+        parentDirection = TreeDirection LeftBranch parentNode Leaf
+        grandparentDirection = TreeDirection RightBranch grandparentNode
+                                 uncleTree
+        rootDirection = TreeDirection LeftBranch rootNode granduncleTree
+        parentBranch = TreeBranch newTree parentNode Leaf
+        newBranch = TreeBranch Leaf newNode Leaf
+        treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
+                       parentDirection newBranch
+        expectedCase = Case4 [ grandparentDirection, rootDirection ]
+                       parentBranch newBranch
+
 case5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 case5FamilyAndExpectation = (treeFamily, expectedCase)
   where rootNode = RedBlackNode Black 10
@@ -75,6 +97,31 @@ case5FamilyAndExpectation = (treeFamily, expectedCase)
                        parentDirection newBranch
         whiteGrandparent = WhiteBranch parentTree 5 uncleTree
         whiteParent = WhiteBranch newTree 3 Leaf
+        expectedCase = Case5 [ rootDirection ] whiteGrandparent whiteParent
+                       newBranch
+
+invertedCase5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
+invertedCase5FamilyAndExpectation = (treeFamily, expectedCase)
+  where rootNode = RedBlackNode Black 10
+        granduncleNode = RedBlackNode Red 15
+        grandparentNode = RedBlackNode Black 5
+        parentNode = RedBlackNode Red 7
+        uncleNode = RedBlackNode Black 3
+        newNode = RedBlackNode Red 8
+        newBranch = TreeBranch Leaf newNode Leaf
+        newTree = branch2Tree newBranch
+        uncleTree = Branch Leaf uncleNode Leaf
+        granduncleTree = Branch Leaf granduncleNode Leaf
+        parentDirection = TreeDirection RightBranch parentNode Leaf
+        grandparentDirection = TreeDirection RightBranch grandparentNode
+                                 uncleTree
+        rootDirection = TreeDirection LeftBranch rootNode granduncleTree
+        parentBranch = TreeBranch Leaf parentNode newTree
+        parentTree = branch2Tree parentBranch
+        treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
+                       parentDirection newBranch
+        whiteGrandparent = WhiteBranch uncleTree 5 parentTree
+        whiteParent = WhiteBranch Leaf 7 newTree
         expectedCase = Case5 [ rootDirection ] whiteGrandparent whiteParent
                        newBranch
 
@@ -150,12 +197,27 @@ spec = do
 
       newCase `shouldBe` expectedCase
 
+    it "identifies insertion case #4 (inverted example)" $ do
+      let (treeFamily, expectedCase) = invertedCase4FamilyAndExpectation
+
+      let newCase = identifyRBTCase treeFamily
+
+      newCase `shouldBe` expectedCase
+
     it "identifies insertion case #5" $ do
       let (treeFamily, expectedCase) = case5FamilyAndExpectation
 
       let newCase = identifyRBTCase treeFamily
 
       newCase `shouldBe` expectedCase
+
+    it "identifies insertion case #5 (inverted example)" $ do
+      let (treeFamily, expectedCase) = invertedCase5FamilyAndExpectation
+
+      let newCase = identifyRBTCase treeFamily
+
+      newCase `shouldBe` expectedCase
+
   describe "insert" $ do
     it "if node is inserted at root, it is painted black" $ do
       let tree = Leaf :: RedBlackTree Int
