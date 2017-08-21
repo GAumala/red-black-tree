@@ -50,7 +50,7 @@ case4FamilyAndExpectation = (treeFamily, expectedCase)
         newBranch = TreeBranch Leaf newNode Leaf
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
-        expectedCase = Case4 [ grandparentDirection, rootDirection ]
+        expectedCase = Case4 [ rootDirection ] grandparentDirection
                        parentBranch newBranch
 
 invertedCase4FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
@@ -72,7 +72,7 @@ invertedCase4FamilyAndExpectation = (treeFamily, expectedCase)
         newBranch = TreeBranch Leaf newNode Leaf
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
-        expectedCase = Case4 [ grandparentDirection, rootDirection ]
+        expectedCase = Case4 [ rootDirection ] grandparentDirection
                        parentBranch newBranch
 
 case5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
@@ -95,9 +95,8 @@ case5FamilyAndExpectation = (treeFamily, expectedCase)
         parentTree = branch2Tree parentBranch
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
-        whiteGrandparent = WhiteBranch parentTree 5 uncleTree
         whiteParent = WhiteBranch newTree 3 Leaf
-        expectedCase = Case5 [ rootDirection ] whiteGrandparent whiteParent
+        expectedCase = Case5 [ rootDirection ] grandparentDirection whiteParent
                        newBranch
 
 invertedCase5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
@@ -120,9 +119,8 @@ invertedCase5FamilyAndExpectation = (treeFamily, expectedCase)
         parentTree = branch2Tree parentBranch
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
-        whiteGrandparent = WhiteBranch uncleTree 5 parentTree
         whiteParent = WhiteBranch Leaf 7 newTree
-        expectedCase = Case5 [ rootDirection ] whiteGrandparent whiteParent
+        expectedCase = Case5 [ rootDirection ] grandparentDirection whiteParent
                        newBranch
 
 shouldBeColor :: (Ord a) => RedBlackTree a -> RedBlack -> Expectation
