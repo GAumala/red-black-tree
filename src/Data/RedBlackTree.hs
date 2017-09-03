@@ -47,9 +47,9 @@ data RBTCase a
   = Case1 (WhiteBranch a)
   | Case2 (RedBlackDirections a) (RedBlackBranch a)
   | Case3 (RedBlackDirections a) a (WhiteBranch a) (WhiteBranch a)
-  | Case4 (RedBlackDirections a) (RedBlackDirection a) (RedBlackBranch a)
-    (RedBlackBranch a)
-  | Case5 (RedBlackDirections a) (RedBlackDirection a) (WhiteBranch a)
+  | Case4 (RedBlackDirections a) (RedBlackDirection a) a
+    (RedBlackTree a) (RedBlackBranch a)
+  | Case5 (RedBlackDirections a) (RedBlackDirection a) a (RedBlackTree a)
     (RedBlackBranch a)
   deriving (Eq, Ord, Show)
 
@@ -111,13 +111,12 @@ identifyCases345 directions
         whiteParent = removeBranchColor parentBranch
 identifyCases345 directions grandparentDirection parentDirection newBranch
   | grandparentBranchType /= parentBranchType =
-    Case4 directions grandparentDirection parentBranch newBranch
+    Case4 directions grandparentDirection parentContent siblingTree newBranch
   | grandparentBranchType == parentBranchType =
-    Case5 directions grandparentDirection whiteParent newBranch
+    Case5 directions grandparentDirection parentContent siblingTree newBranch
   where TreeDirection grandparentBranchType _ _ = grandparentDirection
-        TreeDirection parentBranchType _ _ = parentDirection
-        parentBranch = reconstructAncestor newBranch parentDirection
-        whiteParent = removeBranchColor parentBranch
+        TreeDirection parentBranchType parentNode siblingTree = parentDirection
+        RedBlackNode _ parentContent =  parentNode
 
 whiteBranch2Tree :: (Ord a) => WhiteBranch a -> RedBlack ->  RedBlackTree a
 whiteBranch2Tree (WhiteBranch leftChild content rightChild) color =
@@ -138,6 +137,7 @@ handleRBTCase (Case3 directionsFromRoot content leftWBranch rightWBranch) =
         newNode = RedBlackNode Red content
         newBranch = TreeBranch leftChild newNode rightChild
         branchZipper = (newBranch, directionsFromRoot)
+
 
 
 identifyRBTCase :: (Ord a) => TreeFamily (RedBlackNode a) -> RBTCase a

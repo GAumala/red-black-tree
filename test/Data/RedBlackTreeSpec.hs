@@ -51,7 +51,7 @@ case4FamilyAndExpectation = (treeFamily, expectedCase)
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
         expectedCase = Case4 [ rootDirection ] grandparentDirection
-                       parentBranch newBranch
+                       3 Leaf newBranch
 
 invertedCase4FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 invertedCase4FamilyAndExpectation = (treeFamily, expectedCase)
@@ -73,7 +73,7 @@ invertedCase4FamilyAndExpectation = (treeFamily, expectedCase)
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
         expectedCase = Case4 [ rootDirection ] grandparentDirection
-                       parentBranch newBranch
+                       7 Leaf newBranch
 
 case5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 case5FamilyAndExpectation = (treeFamily, expectedCase)
@@ -96,7 +96,7 @@ case5FamilyAndExpectation = (treeFamily, expectedCase)
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
         whiteParent = WhiteBranch newTree 3 Leaf
-        expectedCase = Case5 [ rootDirection ] grandparentDirection whiteParent
+        expectedCase = Case5 [ rootDirection ] grandparentDirection 3 Leaf
                        newBranch
 
 invertedCase5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
@@ -120,7 +120,7 @@ invertedCase5FamilyAndExpectation = (treeFamily, expectedCase)
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
         whiteParent = WhiteBranch Leaf 7 newTree
-        expectedCase = Case5 [ rootDirection ] grandparentDirection whiteParent
+        expectedCase = Case5 [ rootDirection ] grandparentDirection 7 Leaf
                        newBranch
 
 shouldBeColor :: (Ord a) => RedBlackTree a -> RedBlack -> Expectation
