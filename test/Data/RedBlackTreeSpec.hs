@@ -135,7 +135,7 @@ getRightTree :: (Ord a) => RedBlackTree a -> RedBlackTree a
 getRightTree (Branch _ content rightChild) = rightChild
 
 createTestTree :: (Ord a) => [a] -> RedBlackTree a
-createTestTree = foldl insert Leaf
+createTestTree = foldl insert emptyRedBlackTree
 
 spec :: Spec
 spec = do
