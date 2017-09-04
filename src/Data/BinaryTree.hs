@@ -10,14 +10,14 @@ module Data.BinaryTree (
 
   appendLeftChild,
   appendRightChild,
-  binaryTreeInsert,
   branch2Tree,
   branchZipperInsert,
   getTreeRoot,
   goLeft,
   goUp,
   goRight,
-  reconstructAncestor) where
+  reconstructAncestor,
+  treeZipperInsert) where
 
 import Data.Maybe
 
@@ -132,7 +132,7 @@ insertOrGoDown :: (Ord a) => TreeDirections a -> TreeInsertResult a -> BranchZip
 insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
   (newBranch, newDirection:treeDirections)
 insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild childToInsert) =
-  binaryTreeInsert (existingChild, directionToChild:treeDirections) childToInsert
+  treeZipperInsert (existingChild, directionToChild:treeDirections) childToInsert
 
 branchZipperToTreeZipper :: (Ord a) => BranchZipper a -> TreeZipper a
 branchZipperToTreeZipper (TreeBranch leftChild content rightChild, xs) =
@@ -146,7 +146,7 @@ branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode =
     appendFunction = if newNode <= treeNode then appendLeftChild
                                             else appendRightChild
 
-binaryTreeInsert :: (Ord a) => TreeZipper a -> a -> BranchZipper a
-binaryTreeInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
-binaryTreeInsert (Branch leftChild treeNode rightChild, xs) newNode =
+treeZipperInsert :: (Ord a) => TreeZipper a -> a -> BranchZipper a
+treeZipperInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
+treeZipperInsert (Branch leftChild treeNode rightChild, xs) newNode =
   branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode

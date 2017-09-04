@@ -207,7 +207,7 @@ insert treeRoot newItem = (handleRBTCase . identifyRBTCase) treeFamily
   where newNode = RedBlackNode Red newItem
         rootZipper = (treeRoot, [])
         (TreeBranch leftChild content rightChild, directions) =
-          binaryTreeInsert rootZipper newNode
+          treeZipperInsert rootZipper newNode
         newTreeBranch = TreeBranch leftChild content rightChild
         newTreeZipper = (newTreeBranch, directions)
         treeFamily = getTreeFamily newTreeZipper

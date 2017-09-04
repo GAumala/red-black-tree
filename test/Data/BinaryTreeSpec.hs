@@ -140,13 +140,13 @@ spec = do
       let newContent = 8
       let startZipper = (emptyBranch, [])
       let expectedDirections = [ TreeDirection RightBranch emptyBranchContent Leaf ]
-      let newZipper = binaryTreeInsert startZipper newContent
+      let newZipper = treeZipperInsert startZipper newContent
 
       newZipper `shouldBe` (TreeBranch Leaf newContent Leaf, expectedDirections)
 
     it "should be able to create a full tree of size 3 from scratch only wth insertions" $ do
       let zipper1 = (Leaf, [])
-      let zipper2 = binaryTreeInsert zipper1 node1
+      let zipper2 = treeZipperInsert zipper1 node1
       zipper2 `shouldBe` (TreeBranch Leaf node1 Leaf, [])
 
       let treeBranchNode2 = TreeBranch Leaf node2 Leaf
@@ -169,7 +169,7 @@ spec = do
       let zipper2Tree = Branch Leaf node4 Leaf
       let zipper2Directions = [ TreeDirection LeftBranch node2 Leaf
                               , TreeDirection LeftBranch node1 initialRightChild ]
-      let zipper2 = binaryTreeInsert zipper1 node4
+      let zipper2 = treeZipperInsert zipper1 node4
 
       zipper2 `shouldBe` (zipper2Branch, zipper2Directions)
 
@@ -191,7 +191,7 @@ spec = do
       let zipper2Tree = Branch Leaf node6 Leaf
       let zipper2Directions = [ TreeDirection LeftBranch node3 Leaf
                               , TreeDirection RightBranch node1 initialLeftChild ]
-      let zipper2 = binaryTreeInsert zipper1 node6
+      let zipper2 = treeZipperInsert zipper1 node6
 
       zipper2 `shouldBe` (zipper2Branch, zipper2Directions)
 
