@@ -10,6 +10,7 @@ module Data.BinaryTree (
 
   appendLeftChild,
   appendRightChild,
+  binaryTreeFind,
   branch2Tree,
   branchZipperInsert,
   getTreeRoot,
@@ -150,3 +151,10 @@ treeZipperInsert :: (Ord a) => TreeZipper a -> a -> BranchZipper a
 treeZipperInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
 treeZipperInsert (Branch leftChild treeNode rightChild, xs) newNode =
   branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode
+
+binaryTreeFind :: (Ord a) => BinaryTree a -> a -> Maybe a
+binaryTreeFind Leaf _ = Nothing
+binaryTreeFind (Branch leftTree content rightTree) target
+  | target == content = Just content
+  | target < content = binaryTreeFind leftTree target
+  | target > content = binaryTreeFind rightTree target

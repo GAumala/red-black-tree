@@ -1,6 +1,7 @@
 module Data.RedBlackTree (
   identifyRBTCase,
   insert,
+  find, 
 
   RBTCase (Case1, Case2, Case3, Case4, Case5),
   RedBlack (Red, Black),
@@ -211,3 +212,10 @@ insert treeRoot newItem = (handleRBTCase . identifyRBTCase) treeFamily
         newTreeBranch = TreeBranch leftChild content rightChild
         newTreeZipper = (newTreeBranch, directions)
         treeFamily = getTreeFamily newTreeZipper
+
+getNodeContent :: (Ord a) => RedBlackNode a -> a
+getNodeContent (RedBlackNode _ content) = content
+
+find :: (Ord a) => RedBlackTree a -> a -> Maybe a
+find redBlackTree target = fmap getNodeContent maybeResult
+  where maybeResult = binaryTreeFind redBlackTree (RedBlackNode Black target)
