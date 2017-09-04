@@ -47,7 +47,7 @@ data RBTCase a
   = Case1 (WhiteBranch a)
   | Case2 (RedBlackDirections a) (RedBlackBranch a)
   | Case3 (RedBlackDirections a) a (WhiteBranch a) (WhiteBranch a)
-  | Case4 (RedBlackDirections a) (RedBlackDirection a) a
+  | Case4 (RedBlackDirections a) (RedBlackDirection a) (RedBlackNode a)
     (RedBlackTree a) (RedBlackBranch a)
   | Case5 (RedBlackDirections a) (RedBlackDirection a) a (RedBlackTree a)
     (RedBlackBranch a)
@@ -111,7 +111,7 @@ identifyCases345 directions
         whiteParent = removeBranchColor parentBranch
 identifyCases345 directions grandparentDirection parentDirection newBranch
   | grandparentBranchType /= parentBranchType =
-    Case4 directions grandparentDirection parentContent siblingTree newBranch
+    Case4 directions grandparentDirection parentNode siblingTree newBranch
   | grandparentBranchType == parentBranchType =
     Case5 directions grandparentDirection parentContent siblingTree newBranch
   where TreeDirection grandparentBranchType _ _ = grandparentDirection
@@ -137,8 +137,38 @@ handleRBTCase (Case3 directionsFromRoot content leftWBranch rightWBranch) =
         newNode = RedBlackNode Red content
         newBranch = TreeBranch leftChild newNode rightChild
         branchZipper = (newBranch, directionsFromRoot)
-
-
+handleRBTCase (Case4 directions grandparentDirection parentNode siblingTree
+  latestBranch) =
+  handleRBTCase (Case5 directions grandparentDirection newParentContent
+  newSiblingTree newLatestBranch)
+  where TreeBranch latestLeftTree (RedBlackNode _ childContent) latestRightTree =
+          latestBranch
+        TreeDirection grandparentDirectionType _ _ = grandparentDirection
+        newParentContent = childContent
+        newLatestNode = parentNode
+        newLatestBranch = if grandparentDirectionType == LeftBranch then
+          TreeBranch siblingTree newLatestNode latestLeftTree else
+          TreeBranch latestRightTree newLatestNode siblingTree
+        newSiblingTree = if grandparentDirectionType == LeftBranch then
+          latestRightTree else latestLeftTree
+handleRBTCase (Case5 directions grandparentDirection parentContent
+  siblingTree latestBranch) =
+  branch2Tree rootBranch
+  where TreeDirection grandparentDirectionType grandparentNode uncleTree =
+          grandparentDirection
+        RedBlackNode _ grandparentContent = grandparentNode
+        newTopNode = RedBlackNode Black parentContent
+        rotatedGrandparentNode = RedBlackNode Red grandparentContent
+        latestTree = branch2Tree latestBranch
+        needsRightRotation = grandparentDirectionType == LeftBranch
+        newSiblingTree = if needsRightRotation
+          then Branch siblingTree rotatedGrandparentNode uncleTree
+          else Branch uncleTree rotatedGrandparentNode siblingTree
+        rotatedBranch = if needsRightRotation
+          then TreeBranch latestTree newTopNode newSiblingTree
+          else TreeBranch newSiblingTree newTopNode latestTree
+        branchZipper = (rotatedBranch, directions)
+        (rootBranch, _) = getTreeRoot branchZipper
 
 identifyRBTCase :: (Ord a) => TreeFamily (RedBlackNode a) -> RBTCase a
 identifyRBTCase (IsRoot rootBranch) = Case1 (removeBranchColor rootBranch)
@@ -156,7 +186,6 @@ identifyRBTCase (HasGrandparent directions grandparentDirection
         TreeBranch _ parentContent _ = parentBranch
         TreeBranch _ grandparentContent _ = grandparentBranch
 
-
 handleInsertedTreeFamily :: (Ord a) => TreeFamily (RedBlackNode a) -> RedBlackTree a
 handleInsertedTreeFamily (IsRoot rootBranch) = handleCase1 rootBranch
 handleInsertedTreeFamily (HasParent direction insertedBranch) =
@@ -173,10 +202,8 @@ handleInsertedTreeFamily (HasGrandparent directions grandparentDirection
         (rootBranch, _) = getTreeRoot grandparentZipper
 
 
-
-
 insert :: (Ord a) => RedBlackTree a -> a -> RedBlackTree a
-insert treeRoot newItem = handleInsertedTreeFamily treeFamily
+insert treeRoot newItem = (handleRBTCase . identifyRBTCase) treeFamily
   where newNode = RedBlackNode Red newItem
         rootZipper = (treeRoot, [])
         (TreeBranch leftChild content rightChild, directions) =

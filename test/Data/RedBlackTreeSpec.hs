@@ -51,7 +51,7 @@ case4FamilyAndExpectation = (treeFamily, expectedCase)
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
         expectedCase = Case4 [ rootDirection ] grandparentDirection
-                       3 Leaf newBranch
+                       parentNode Leaf newBranch
 
 invertedCase4FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 invertedCase4FamilyAndExpectation = (treeFamily, expectedCase)
@@ -73,7 +73,7 @@ invertedCase4FamilyAndExpectation = (treeFamily, expectedCase)
         treeFamily = HasGrandparent [ rootDirection ] grandparentDirection
                        parentDirection newBranch
         expectedCase = Case4 [ rootDirection ] grandparentDirection
-                       7 Leaf newBranch
+                       parentNode Leaf newBranch
 
 case5FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 case5FamilyAndExpectation = (treeFamily, expectedCase)
@@ -124,12 +124,15 @@ invertedCase5FamilyAndExpectation = (treeFamily, expectedCase)
                        newBranch
 
 shouldBeColor :: (Ord a) => RedBlackTree a -> RedBlack -> Expectation
+shouldBeColor Leaf expectedColor = Black `shouldBe` expectedColor
 shouldBeColor (Branch _ (RedBlackNode color content) _) expectedColor =
   color `shouldBe` expectedColor
 
 getLeftTree :: (Ord a) => RedBlackTree a -> RedBlackTree a
-getLeftTree (Branch leftChild content rightChild) = leftChild
+getLeftTree (Branch leftChild content _) = leftChild
 
+getRightTree :: (Ord a) => RedBlackTree a -> RedBlackTree a
+getRightTree (Branch _ content rightChild) = rightChild
 spec :: Spec
 spec = do
   describe "identifyRBTCase" $ do
@@ -254,3 +257,103 @@ spec = do
 
       newTree `shouldBe` expectedTree
       insertedTree `shouldBeColor` Red
+
+    it "if inserted node is case 4, rotates tree correctly and returns the root" $ do
+      let grandparentNode = RedBlackNode Black 5
+      let parentNode = RedBlackNode Red 3
+      let uncleNode = RedBlackNode Black 7
+      let siblingNode = RedBlackNode Black 1
+
+      let siblingTree = Branch Leaf siblingNode Leaf
+      let leftSubtree = Branch siblingTree parentNode Leaf
+      let rightSubtree = Branch Leaf uncleNode Leaf
+
+      let case4Tree = Branch leftSubtree grandparentNode rightSubtree
+
+      let expectedLeftSubtree = Branch siblingTree (RedBlackNode Red 3) Leaf
+      let expectedRightSubtree = Branch Leaf (RedBlackNode Red 5) rightSubtree
+      let expectedTree = Branch expectedLeftSubtree (RedBlackNode Black 4)
+                         expectedRightSubtree
+
+      let newTree = insert case4Tree 4
+
+      newTree `shouldBe` expectedTree
+      -- assert colors since Eq instance is color blind
+      getLeftTree newTree `shouldBeColor` Red
+      getRightTree newTree `shouldBeColor` Red
+      (getRightTree . getRightTree) newTree `shouldBeColor` Black
+      (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
+
+    it "if inserted node is inverted case 4, rotates tree correctly and returns the root" $ do
+        let grandparentNode = RedBlackNode Black 5
+        let parentNode = RedBlackNode Red 7
+        let uncleNode = RedBlackNode Black 3
+        let siblingNode = RedBlackNode Black 8
+
+        let siblingTree = Branch Leaf siblingNode Leaf
+        let leftSubtree = Branch Leaf uncleNode Leaf
+        let rightSubtree = Branch Leaf parentNode siblingTree
+
+        let invertedCase4Tree = Branch leftSubtree grandparentNode rightSubtree
+
+        let expectedLeftSubtree = Branch leftSubtree (RedBlackNode Red 5) Leaf
+        let expectedRightSubtree = Branch Leaf (RedBlackNode Red 7) siblingTree
+        let expectedTree = Branch expectedLeftSubtree (RedBlackNode Black 6)
+                           expectedRightSubtree
+
+        let newTree = insert invertedCase4Tree 6
+
+        newTree `shouldBe` expectedTree
+        -- assert colors since Eq instance is color blind
+        getLeftTree newTree `shouldBeColor` Red
+        getRightTree newTree `shouldBeColor` Red
+        (getRightTree . getRightTree) newTree `shouldBeColor` Black
+        (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
+
+    it "if inserted node is case 5, rotates tree correctly and returns the root" $ do
+        let grandparentNode = RedBlackNode Black 5
+        let parentNode = RedBlackNode Red 3
+        let uncleNode = RedBlackNode Black 7
+
+        let leftSubtree = Branch Leaf parentNode Leaf
+        let rightSubtree = Branch Leaf uncleNode Leaf
+
+        let case5Tree = Branch leftSubtree grandparentNode rightSubtree
+
+        let expectedLeftSubtree = Branch Leaf (RedBlackNode Red 1) Leaf
+        let expectedRightSubtree = Branch Leaf (RedBlackNode Red 5) rightSubtree
+        let expectedTree = Branch expectedLeftSubtree (RedBlackNode Black 3)
+                           expectedRightSubtree
+
+        let newTree = insert case5Tree 1
+
+        newTree `shouldBe` expectedTree
+        -- assert colors since Eq instance is color blind
+        getLeftTree newTree `shouldBeColor` Red
+        getRightTree newTree `shouldBeColor` Red
+        (getRightTree . getRightTree) newTree `shouldBeColor` Black
+        (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
+
+    it "if inserted node is inverted case 5, rotates tree correctly and returns the root" $ do
+        let grandparentNode = RedBlackNode Black 5
+        let parentNode = RedBlackNode Red 7
+        let uncleNode = RedBlackNode Black 3
+
+        let leftSubtree = Branch Leaf uncleNode Leaf
+        let rightSubtree = Branch Leaf parentNode Leaf
+
+        let invertedCase5Tree = Branch leftSubtree grandparentNode rightSubtree
+
+        let expectedLeftSubtree = Branch leftSubtree (RedBlackNode Red 5) Leaf
+        let expectedRightSubtree = Branch Leaf (RedBlackNode Red 8) Leaf
+        let expectedTree = Branch expectedLeftSubtree (RedBlackNode Black 7)
+                           expectedRightSubtree
+
+        let newTree = insert invertedCase5Tree 8
+
+        newTree `shouldBe` expectedTree
+        -- assert colors since Eq instance is color blind
+        getLeftTree newTree `shouldBeColor` Red
+        getRightTree newTree `shouldBeColor` Red
+        (getRightTree . getRightTree) newTree `shouldBeColor` Black
+        (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
