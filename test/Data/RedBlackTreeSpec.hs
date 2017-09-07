@@ -6,7 +6,8 @@ import Data.RedBlackTree
 
 {-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
 
--- RedBlackNode's Eq instance is colorblind, so we need to test color separately
+instance BinaryTreeNode Int where
+  mergeNodes leftInt rightInt = leftInt
 
 case3FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 case3FamilyAndExpectation = (treeFamily, expectedCase)
@@ -123,25 +124,26 @@ invertedCase5FamilyAndExpectation = (treeFamily, expectedCase)
         expectedCase = Case5 [ rootDirection ] grandparentDirection 7 Leaf
                        newBranch
 
-shouldBeColor :: (Ord a) => RedBlackTree a -> RedBlack -> Expectation
+-- RedBlackNode's Eq instance is colorblind, so we need to test color separately
+shouldBeColor :: (BinaryTreeNode a) => RedBlackTree a -> RedBlack -> Expectation
 shouldBeColor Leaf expectedColor = Black `shouldBe` expectedColor
 shouldBeColor (Branch _ (RedBlackNode color content) _) expectedColor =
   color `shouldBe` expectedColor
 
-getLeftTree :: (Ord a) => RedBlackTree a -> RedBlackTree a
+getLeftTree :: (BinaryTreeNode a) => RedBlackTree a -> RedBlackTree a
 getLeftTree (Branch leftChild content _) = leftChild
 
-getRightTree :: (Ord a) => RedBlackTree a -> RedBlackTree a
+getRightTree :: (BinaryTreeNode a) => RedBlackTree a -> RedBlackTree a
 getRightTree (Branch _ content rightChild) = rightChild
 
-createTestTree :: (Ord a) => [a] -> RedBlackTree a
+createTestTree :: (BinaryTreeNode a) => [a] -> RedBlackTree a
 createTestTree = foldl insert emptyRedBlackTree
 
 spec :: Spec
 spec = do
   describe "identifyRBTCase" $ do
     it "identifies insertion case #1" $ do
-      let rootNode = RedBlackNode Red 1
+      let rootNode = RedBlackNode Red 1 :: RedBlackNode Int
       let rootBranch = TreeBranch Leaf rootNode Leaf
       let treeFamily = IsRoot rootBranch
       let expectedCase = Case1 (WhiteBranch Leaf 1 Leaf)
@@ -151,7 +153,7 @@ spec = do
       newCase `shouldBe` expectedCase
 
     it "identifies insertion case #2 in a family that only has a parent" $ do
-      let rootNode = RedBlackNode Black 3
+      let rootNode = RedBlackNode Black 3 :: RedBlackNode Int
       let leftNode = RedBlackNode Red 2
       let directionToChild = TreeDirection LeftBranch rootNode Leaf
       let leftChildBranch = TreeBranch Leaf leftNode Leaf
@@ -164,7 +166,7 @@ spec = do
       newCase `shouldBe` expectedCase
 
     it "identifies insertion case #2 in a larger family" $ do
-      let rootNode = RedBlackNode Black 10
+      let rootNode = RedBlackNode Black 10 :: RedBlackNode Int
       let granduncleNode = RedBlackNode Red 15
       let grandparentNode = RedBlackNode Red 5
       let parentNode = RedBlackNode Black 3
@@ -234,7 +236,7 @@ spec = do
       modifiedTree `shouldBeColor` Black
 
     it "if inserted node lacks grandparent but parent is black, returns the root tree" $ do
-      let rootNode = RedBlackNode Black 2
+      let rootNode = RedBlackNode Black 2 :: RedBlackNode Int
       let rootTree = Branch Leaf rootNode Leaf
       let newItem = 1
       let expectedInsertedTree = Branch Leaf (RedBlackNode Red 1) Leaf
@@ -247,7 +249,7 @@ spec = do
       newTreeLeftChild `shouldBeColor` Red
 
     it "if inserted node has grandparent but parent is black, returns the root tree" $ do
-      let rootNode = RedBlackNode Black 4
+      let rootNode = RedBlackNode Black 4 :: RedBlackNode Int
       let parentNode = RedBlackNode Black 3
       let parentTree = Branch Leaf parentNode Leaf
       let rootTree = Branch parentTree rootNode Leaf
@@ -263,7 +265,7 @@ spec = do
       insertedTree `shouldBeColor` Red
 
     it "if inserted node is case 4, rotates tree correctly and returns the root" $ do
-      let grandparentNode = RedBlackNode Black 5
+      let grandparentNode = RedBlackNode Black 5 :: RedBlackNode Int
       let parentNode = RedBlackNode Red 3
       let uncleNode = RedBlackNode Black 7
       let siblingNode = RedBlackNode Black 1
@@ -289,7 +291,7 @@ spec = do
       (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
 
     it "if inserted node is inverted case 4, rotates tree correctly and returns the root" $ do
-        let grandparentNode = RedBlackNode Black 5
+        let grandparentNode = RedBlackNode Black 5 :: RedBlackNode Int
         let parentNode = RedBlackNode Red 7
         let uncleNode = RedBlackNode Black 3
         let siblingNode = RedBlackNode Black 8
@@ -315,7 +317,7 @@ spec = do
         (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
 
     it "if inserted node is case 5, rotates tree correctly and returns the root" $ do
-        let grandparentNode = RedBlackNode Black 5
+        let grandparentNode = RedBlackNode Black 5 :: RedBlackNode Int
         let parentNode = RedBlackNode Red 3
         let uncleNode = RedBlackNode Black 7
 
@@ -339,7 +341,7 @@ spec = do
         (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
 
     it "if inserted node is inverted case 5, rotates tree correctly and returns the root" $ do
-        let grandparentNode = RedBlackNode Black 5
+        let grandparentNode = RedBlackNode Black 5 :: RedBlackNode Int
         let parentNode = RedBlackNode Red 7
         let uncleNode = RedBlackNode Black 3
 
@@ -364,7 +366,7 @@ spec = do
 
   describe "find" $
     it "should find every number in a tree that has numbers [1-9]" $ do
-      let tree = createTestTree [1..9]
+      let tree = createTestTree [1..9] :: RedBlackTree Int
 
       find tree 1 `shouldBe` Just 1
       find tree 2 `shouldBe` Just 2

@@ -4,12 +4,15 @@ import Test.Hspec
 import Data.BinaryTree
 
 
+instance BinaryTreeNode Int where
+  mergeNodes leftInt rightInt = leftInt
+
 spec :: Spec
 spec = do
-  let leftChildContent = 2
+  let leftChildContent = 2 :: Int
   let rightChildContent = 3
   let treeContent = 1
-  let emptyBranchContent = 4
+  let emptyBranchContent = 4 :: Int
   let emptyTreeBranch = TreeBranch Leaf emptyBranchContent Leaf
   let leftChild = Branch Leaf leftChildContent Leaf
   let rightChild = Branch Leaf rightChildContent Leaf
@@ -128,7 +131,7 @@ spec = do
 
 
   describe "binaryTreeInsert" $ do
-    let node1 = 10
+    let node1 = 10 :: Int
     let node2 = 8
     let node3 = 12
     let node4 = 7
