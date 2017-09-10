@@ -3,11 +3,10 @@ module Data.RedBlackTreeSpec (spec) where
 import Test.Hspec
 import Data.BinaryTree
 import Data.RedBlackTree
+import Data.TestUtils
 
 {-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
 
-instance BinaryTreeNode Int where
-  mergeNodes leftInt rightInt = leftInt
 
 case3FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 case3FamilyAndExpectation = (treeFamily, expectedCase)
@@ -124,20 +123,11 @@ invertedCase5FamilyAndExpectation = (treeFamily, expectedCase)
         expectedCase = Case5 [ rootDirection ] grandparentDirection 7 Leaf
                        newBranch
 
--- RedBlackNode's Eq instance is colorblind, so we need to test color separately
-shouldBeColor :: (BinaryTreeNode a) => RedBlackTree a -> RedBlack -> Expectation
-shouldBeColor Leaf expectedColor = Black `shouldBe` expectedColor
-shouldBeColor (Branch _ (RedBlackNode color content) _) expectedColor =
-  color `shouldBe` expectedColor
-
 getLeftTree :: (BinaryTreeNode a) => RedBlackTree a -> RedBlackTree a
 getLeftTree (Branch leftChild content _) = leftChild
 
 getRightTree :: (BinaryTreeNode a) => RedBlackTree a -> RedBlackTree a
 getRightTree (Branch _ content rightChild) = rightChild
-
-createTestTree :: (BinaryTreeNode a) => [a] -> RedBlackTree a
-createTestTree = foldl insert emptyRedBlackTree
 
 spec :: Spec
 spec = do

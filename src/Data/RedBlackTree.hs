@@ -1,4 +1,5 @@
 module Data.RedBlackTree (
+  getBlackHeight,
   identifyRBTCase,
   insert,
   emptyRedBlackTree,
@@ -7,6 +8,7 @@ module Data.RedBlackTree (
   RBTCase (Case1, Case2, Case3, Case4, Case5),
   RedBlack (Red, Black),
   RedBlackNode (RedBlackNode),
+  RedBlackBranch,
   RedBlackTree,
   WhiteBranch (WhiteBranch)
 ) where
@@ -236,6 +238,13 @@ identifyRBTCase (HasGrandparent directions grandparentDirection
         TreeDirection _ _ uncleTree = parentDirection
         TreeBranch _ parentContent _ = parentBranch
         TreeBranch _ grandparentContent _ = grandparentBranch
+
+getBlackHeight :: (BinaryTreeNode a) => RedBlackTree a -> Int
+getBlackHeight Leaf = 1
+getBlackHeight (Branch _ (RedBlackNode Black _) rightSubtree) =
+  1 + getBlackHeight rightSubtree
+getBlackHeight (Branch _ (RedBlackNode Red _) rightSubtree) =
+  getBlackHeight rightSubtree
 
 handleInsertedTreeFamily :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a) -> RedBlackTree a
 handleInsertedTreeFamily (IsRoot rootBranch) = handleCase1 rootBranch
