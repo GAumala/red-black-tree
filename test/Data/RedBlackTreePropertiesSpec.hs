@@ -73,25 +73,9 @@ spec = do
       let tree = Branch leftSubtree (RedBlackNode Black 2) rightSubtree
 
       assertRedBlackTreeProperties tree 2 0 `shouldThrow` anyException
-  describe "Red Black Tree Properties" $ do
-    it "should not break if 1K integers are inserted to the tree" $ do
-      let items = [1..1000] :: [Int]
-      let tree = createTestTree items
-      let expectedBlackHeight = getBlackHeight tree
-
-      tree `shouldBeColor` Black
-      assertRedBlackTreeProperties tree expectedBlackHeight 0
-
+  describe "Red Black Tree Properties" $ 
     it "should not break if 1M integers are inserted to the tree" $ do
       let items = [1..1000000] :: [Int]
-      let tree = createTestTree items
-      let expectedBlackHeight = getBlackHeight tree
-
-      tree `shouldBeColor` Black
-      assertRedBlackTreeProperties tree expectedBlackHeight 0
-
-    it "should not break if 10M integers are inserted to the tree" $ do
-      let items = [1..10000000] :: [Int]
       let tree = createTestTree items
       let expectedBlackHeight = getBlackHeight tree
 

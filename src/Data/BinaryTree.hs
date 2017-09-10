@@ -40,8 +40,8 @@ class (Ord a) => BinaryTreeNode a where
 
 -- A BinaryTree is either a leaf (empty) or a @BinaryTreeNode@ with 2
 -- @BinaryTree@ children, left and right
-data (BinaryTreeNode a) => BinaryTree a = Leaf
-  | Branch (BinaryTree a) a (BinaryTree a) deriving (Eq, Ord)
+data BinaryTree a = Leaf | Branch (BinaryTree a) a (BinaryTree a)
+  deriving (Eq, Ord)
 
 instance (BinaryTreeNode a, Show a) => Show (BinaryTree a) where
   show tree = prettyPrintTree tree 0
@@ -50,8 +50,11 @@ instance (BinaryTreeNode a, Show a) => Show (BinaryTree a) where
       prettyPrintTree Leaf spaces = " Leaf"
       prettyPrintTree (Branch leftTree content rightTree) spaces =
         " " ++ show content ++ "\n" ++
-        addSpaces (spaces + 2) ++ "L:" ++ prettyPrintTree leftTree (spaces + 2) ++ "\n" ++
-        addSpaces (spaces + 2) ++ "R:" ++ prettyPrintTree rightTree (spaces + 2) ++ "\n"
+        identation ++ "L:" ++ prettyPrintSubtree leftTree ++
+        identation ++ "R:" ++ prettyPrintSubtree rightTree
+        where identation = addSpaces (spaces + 2)
+              prettyPrintSubtree subtree =  prettyPrintTree subtree (spaces + 2)
+                ++ "\n"
 
 
 -- A BinaryTree can only have two types of branches: Left or Right
@@ -61,7 +64,7 @@ data BranchType = LeftBranch | RightBranch deriving (Show, Eq, Ord)
 -- is the @BranchType@ of the focused node relative to the parent. Second argument
 -- is the parent's node. The third argument is the sibling tree of the focused
 -- node.
-data (BinaryTreeNode a) => TreeDirection a = TreeDirection BranchType a (BinaryTree a)
+data TreeDirection a = TreeDirection BranchType a (BinaryTree a)
   deriving (Show, Eq, Ord)
 
 -- List of @TreeDirection@
@@ -74,7 +77,7 @@ type TreeZipper a = (BinaryTree a, TreeDirections a)
 
 -- Holds the data of a @BinaryTree@ created with the @Branch@ constructor. Useful
 -- type when you want to guarantee that the element is not a @Leaf@
-data (BinaryTreeNode a) => TreeBranch a = TreeBranch (BinaryTree a) a (BinaryTree a)
+data TreeBranch a = TreeBranch (BinaryTree a) a (BinaryTree a)
   deriving (Eq, Ord)
 
 instance (BinaryTreeNode a, Show a) => Show (TreeBranch a) where
@@ -110,7 +113,8 @@ data TreeInsertResult a =
 data TreeFamily a =
   IsRoot (TreeBranch a) |
   HasParent (TreeDirection a) (TreeBranch a) |
-  HasGrandparent (TreeDirections a) (TreeDirection a) (TreeDirection a) (TreeBranch a)
+  HasGrandparent (TreeDirections a) (TreeDirection a) (TreeDirection a)
+    (TreeBranch a)
 
 isLeftTreeDirection :: (BinaryTreeNode a) => TreeDirection a -> Bool
 isLeftTreeDirection (TreeDirection branchType _ _) = branchType == LeftBranch
@@ -136,8 +140,10 @@ goRight (TreeBranch leftChild treeNode rightChild, xs) =
   (rightChild, TreeDirection RightBranch treeNode leftChild:xs)
 
 -- get the parent of a branch given the direction from the parent to the branch
-reconstructAncestor :: (BinaryTreeNode a) => TreeBranch a -> TreeDirection a -> TreeBranch a
-reconstructAncestor currentBranch (TreeDirection branchType parentContent sibling) =
+reconstructAncestor :: (BinaryTreeNode a) => TreeBranch a -> TreeDirection a ->
+  TreeBranch a
+reconstructAncestor currentBranch (TreeDirection branchType parentContent
+  sibling) =
   if branchType == LeftBranch
     then TreeBranch currentTree parentContent sibling
     else TreeBranch sibling parentContent currentTree
@@ -164,7 +170,8 @@ appendLeftChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   where newBranch = TreeBranch Leaf nodeToAppend Leaf
         newDirection = TreeDirection LeftBranch treeContent rightChild
 
-appendRightChild :: (BinaryTreeNode a) => TreeBranch a -> a -> TreeInsertResult a
+appendRightChild :: (BinaryTreeNode a) => TreeBranch a -> a ->
+  TreeInsertResult a
 appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   if rightChild == Leaf then
     InsertOk newBranch newDirection
@@ -173,17 +180,21 @@ appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   where newBranch = TreeBranch Leaf nodeToAppend Leaf
         newDirection = TreeDirection RightBranch treeContent leftChild
 
-insertOrGoDown :: (BinaryTreeNode a) => TreeDirections a -> TreeInsertResult a -> BranchZipper a
+insertOrGoDown :: (BinaryTreeNode a) => TreeDirections a -> TreeInsertResult a
+  -> BranchZipper a
 insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
   (newBranch, newDirection:treeDirections)
-insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild childToInsert) =
-  treeZipperInsert (existingChild, directionToChild:treeDirections) childToInsert
+insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild
+  childToInsert) =
+  treeZipperInsert (existingChild, directionToChild:treeDirections)
+    childToInsert
 
 branchZipperToTreeZipper :: (BinaryTreeNode a) => BranchZipper a -> TreeZipper a
 branchZipperToTreeZipper (TreeBranch leftChild content rightChild, xs) =
   (Branch leftChild content rightChild, xs)
 
-branchZipperInsert :: (BinaryTreeNode a) => BranchZipper a -> a -> BranchZipper a
+branchZipperInsert :: (BinaryTreeNode a) => BranchZipper a -> a ->
+  BranchZipper a
 branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode =
   insertOrGoDown xs (appendFunction focusedBranch newNode)
   where

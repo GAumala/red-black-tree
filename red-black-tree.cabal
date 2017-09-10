@@ -25,6 +25,7 @@ test-suite red-black-tree-test
   hs-source-dirs:      test
   other-modules:       Data.BinaryTreeSpec
                      , Data.RedBlackTreeSpec
+                     , Data.RedBlackTreePropertiesSpec
                      , Data.TestUtils
   main-is:             Spec.hs
   build-depends:       base

@@ -20,7 +20,7 @@ data RedBlack = Red | Black deriving (Show, Eq, Ord)
 
 -- a @RedBlackNode@ contains only two elements, the color of the node and the
 -- actual content.
-data (BinaryTreeNode a) => RedBlackNode a = RedBlackNode {
+data RedBlackNode a = RedBlackNode {
   nodeColor :: RedBlack,
   content :: a
 } deriving (Show)
@@ -61,7 +61,7 @@ type RedBlackDirections a = [ RedBlackDirection a ]
 
 -- Holds all the data of a @RedBlackBranch@ except for the color of the node
 -- at the top of the branch
-data (Ord a) => WhiteBranch a = WhiteBranch (RedBlackTree a) a (RedBlackTree a)
+data WhiteBranch a = WhiteBranch (RedBlackTree a) a (RedBlackTree a)
   deriving (Eq, Ord, Show)
 
 -- The 5 possible cases of red–black tree insertion to handle:
@@ -110,7 +110,8 @@ data RBTCase a
 isColor :: (BinaryTreeNode a) => RedBlackNode a -> RedBlack -> Bool
 isColor (RedBlackNode color _) expectedColor = color == expectedColor
 
-branchIsColor :: (BinaryTreeNode a) => TreeBranch (RedBlackNode a) -> RedBlack -> Bool
+branchIsColor :: (BinaryTreeNode a) => TreeBranch (RedBlackNode a) -> RedBlack
+  -> Bool
 branchIsColor (TreeBranch leftChild node rightChild) = isColor node
 
 treeIsColor :: (BinaryTreeNode a) => RedBlackTree a -> RedBlack -> Bool
@@ -143,8 +144,8 @@ handleCase1 :: (BinaryTreeNode a) => TreeBranch (RedBlackNode a) -> RedBlackTree
 handleCase1 (TreeBranch leftChild content rightChild) =
   Branch leftChild (paintItBlack content) rightChild
 
-identifyCases345 :: (BinaryTreeNode a) => RedBlackDirections a -> RedBlackDirection a ->
-  RedBlackDirection a -> RedBlackBranch a -> RBTCase a
+identifyCases345 :: (BinaryTreeNode a) => RedBlackDirections a ->
+  RedBlackDirection a -> RedBlackDirection a -> RedBlackBranch a -> RBTCase a
 identifyCases345 directions
   (TreeDirection grandparentBranchType grandparentNode
   (Branch leftCousin (RedBlackNode Red uncleContent) rightCousin))
@@ -171,7 +172,8 @@ identifyCases345 directions grandparentDirection parentDirection newBranch
         TreeDirection parentBranchType parentNode siblingTree = parentDirection
         RedBlackNode _ parentContent =  parentNode
 
-whiteBranch2Tree :: (BinaryTreeNode a) => WhiteBranch a -> RedBlack ->  RedBlackTree a
+whiteBranch2Tree :: (BinaryTreeNode a) => WhiteBranch a -> RedBlack ->
+  RedBlackTree a
 whiteBranch2Tree (WhiteBranch leftChild content rightChild) color =
   Branch leftChild newNode rightChild
   where newNode = RedBlackNode color content
@@ -194,8 +196,8 @@ handleRBTCase (Case4 directions grandparentDirection parentNode siblingTree
   latestBranch) =
   handleRBTCase (Case5 directions grandparentDirection newParentContent
   newSiblingTree newLatestBranch)
-  where TreeBranch latestLeftTree (RedBlackNode _ childContent) latestRightTree =
-          latestBranch
+  where TreeBranch latestLeftTree (RedBlackNode _ childContent)
+          latestRightTree = latestBranch
         TreeDirection grandparentDirectionType _ _ = grandparentDirection
         newParentContent = childContent
         newLatestNode = parentNode
@@ -223,7 +225,8 @@ handleRBTCase (Case5 directions grandparentDirection parentContent
         branchZipper = (rotatedBranch, directions)
         (rootBranch, _) = getTreeRoot branchZipper
 
-identifyRBTCase :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a) -> RBTCase a
+identifyRBTCase :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a) ->
+  RBTCase a
 identifyRBTCase (IsRoot rootBranch) = Case1 (removeBranchColor rootBranch)
 identifyRBTCase (HasParent direction insertedBranch) = Case2 [] parentBranch
   where parentBranch = reconstructAncestor insertedBranch direction
@@ -234,7 +237,8 @@ identifyRBTCase (HasGrandparent directions grandparentDirection
       else identifyCases345 directions grandparentDirection parentDirection
       insertedBranch
   where parentBranch = reconstructAncestor insertedBranch parentDirection
-        grandparentBranch = reconstructAncestor parentBranch grandparentDirection
+        grandparentBranch = reconstructAncestor parentBranch
+          grandparentDirection
         TreeDirection _ _ uncleTree = parentDirection
         TreeBranch _ parentContent _ = parentBranch
         TreeBranch _ grandparentContent _ = grandparentBranch
@@ -246,7 +250,8 @@ getBlackHeight (Branch _ (RedBlackNode Black _) rightSubtree) =
 getBlackHeight (Branch _ (RedBlackNode Red _) rightSubtree) =
   getBlackHeight rightSubtree
 
-handleInsertedTreeFamily :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a) -> RedBlackTree a
+handleInsertedTreeFamily :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a)
+  -> RedBlackTree a
 handleInsertedTreeFamily (IsRoot rootBranch) = handleCase1 rootBranch
 handleInsertedTreeFamily (HasParent direction insertedBranch) =
   branch2Tree parentBranch
@@ -257,7 +262,8 @@ handleInsertedTreeFamily (HasGrandparent directions grandparentDirection
       then branch2Tree rootBranch
       else handleCase1 rootBranch
   where parentBranch = reconstructAncestor insertedBranch parentDirection
-        grandparentBranch = reconstructAncestor parentBranch grandparentDirection
+        grandparentBranch = reconstructAncestor parentBranch
+          grandparentDirection
         grandparentZipper = (grandparentBranch, directions)
         (rootBranch, _) = getTreeRoot grandparentZipper
 
