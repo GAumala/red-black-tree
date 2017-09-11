@@ -10,7 +10,7 @@ The goal of this project is to provide an efficient generic structure that can i
 
 ### Implement `BinaryTreeNode`
 
-To insert values to a `RedBlackTree`, their type must have an instance of `BinaryTreeNode`. Members of this typeclass must implement `Ord`, and consequently `Eq`, so that values can be compared and sorted within the tree. Since inserting duplicate values can corrupt the tree, This typeclass provides the following function:
+To insert values to a `RedBlackTree`, their type must have an instance of `BinaryTreeNode`. Members of this typeclass must implement `Ord`, and consequently `Eq`, so that values can be compared and sorted within the tree. Since inserting duplicate values can corrupt the tree, this typeclass provides the following function:
 
 ``` Haskell
   mergeNodes :: a -> a -> a
@@ -36,9 +36,9 @@ find :: (BinaryTreeNode a) => RedBlackTree a -> a -> Maybe a
 
 `insert` takes an existing tree and a new value and returns a new tree that contains the new value.
 
-`find` takes an existing tree and a target value and returns the value inside that tree that is equal to the target. Returns `Nothing` of no such value is found.
+`find` takes an existing tree and a target value and returns the value inside that tree that is equal to the target. Returns `Nothing` if no such value is found.
 
-## Haskell
+## Example
 
 Suppose we wanted to store our app's users on a `RedBlackTree`. For simplicity, let's assume that we only know two things about the user: the user's email address, a string guaranteed to be unique for each user, and the user's name. The type `User` could look like this:
 
@@ -68,7 +68,7 @@ up the name of the user whose address is "frank@gmail.com".
 ``` Haskell
 
 import Data.RedBlackTree
-import Data.User -- This module defines our User class
+import Data.User -- This module defines our User type
 
 main = do
 -- create users to insert
@@ -106,3 +106,19 @@ print $ fmap userName (find userTree targetNode2)
 
 - Currently the only operations supported are `find` and `insert`. There is no `remove` at the moment.
 - Uses a lot of memory. A `RedBlackTree` with 10 million integers needs over 1 GB of RAM. I'm not sure how to fix this. Suggestions are welcome!
+
+## Development
+
+To build this library, clone this repo and use Stack.
+
+``` bash
+git clone https://github.com/GAumala/red-black-tree
+stack setup
+stack build
+```
+
+To run unot tests with RSpec:
+
+``` bash
+stack test
+```
