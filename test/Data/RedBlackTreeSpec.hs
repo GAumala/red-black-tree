@@ -7,7 +7,6 @@ import Data.TestUtils
 
 {-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
 
-
 case3FamilyAndExpectation :: (TreeFamily (RedBlackNode Int), RBTCase Int)
 case3FamilyAndExpectation = (treeFamily, expectedCase)
   where rootNode = RedBlackNode Black 10
@@ -353,7 +352,6 @@ spec = do
         getRightTree newTree `shouldBeColor` Red
         (getRightTree . getRightTree) newTree `shouldBeColor` Black
         (getLeftTree . getLeftTree) newTree `shouldBeColor` Black
-
   describe "find" $
     it "should find every number in a tree that has numbers [1-9]" $ do
       let tree = createTestTree [1..9] :: RedBlackTree Int

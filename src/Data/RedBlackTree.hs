@@ -15,10 +15,10 @@ module Data.RedBlackTree (
 
 import Data.BinaryTree
 
--- Red black trees can only have two types of nodes: Red and Black
+-- | Red black trees can only have two types of nodes: Red and Black
 data RedBlack = Red | Black deriving (Show, Eq, Ord)
 
--- a @RedBlackNode@ contains only two elements, the color of the node and the
+-- | a @RedBlackNode@ contains only two elements, the color of the node and the
 -- actual content.
 data RedBlackNode a = RedBlackNode {
   nodeColor :: RedBlack,
@@ -41,7 +41,7 @@ instance (BinaryTreeNode a) => Eq (RedBlackNode a) where
 
 
 
--- A @BinaryTree@ with only nodes of type @RedBlackNode. is either a leaf
+-- | A @BinaryTree@ with only nodes of type @RedBlackNode. is either a leaf
 -- (empty) or a @RedBlackNode@ with 2 @RedBlackTree@ children, left and right
 type RedBlackTree a = BinaryTree (RedBlackNode a)
 
@@ -267,23 +267,30 @@ handleInsertedTreeFamily (HasGrandparent directions grandparentDirection
         grandparentZipper = (grandparentBranch, directions)
         (rootBranch, _) = getTreeRoot grandparentZipper
 
-
+-- | inserts a new node to the tree, performing the necessary rotations to
+-- guarantee that the red black properties are kept after the insertion.
 insert :: (BinaryTreeNode a) => RedBlackTree a -> a -> RedBlackTree a
-insert treeRoot newItem = (handleRBTCase . identifyRBTCase) treeFamily
+insert treeRoot newItem = if insertedContent `isColor` Black
+                          then branch2Tree newRootBranch
+                          else (handleRBTCase . identifyRBTCase) treeFamily
   where newNode = RedBlackNode Red newItem
         rootZipper = (treeRoot, [])
-        (TreeBranch leftChild content rightChild, directions) =
-          treeZipperInsert rootZipper newNode
-        newTreeBranch = TreeBranch leftChild content rightChild
-        newTreeZipper = (newTreeBranch, directions)
-        treeFamily = getTreeFamily newTreeZipper
+        (insertedTreeBranch, directions) = treeZipperInsert rootZipper newNode
+        TreeBranch _ insertedContent _ = insertedTreeBranch
+        insertedBranchZipper = (insertedTreeBranch, directions)
+        (newRootBranch, _) = getTreeRoot insertedBranchZipper
+        treeFamily = getTreeFamily insertedBranchZipper
 
 getNodeContent :: (BinaryTreeNode a) => RedBlackNode a -> a
 getNodeContent (RedBlackNode _ content) = content
 
+-- | Lookup a target node in the tree. The target value doesn't need to be the
+-- exact same value that is already in the tree. It only needs to satisfy the
+-- @Eq@ instance
 find :: (BinaryTreeNode a) => RedBlackTree a -> a -> Maybe a
 find redBlackTree target = fmap getNodeContent maybeResult
   where maybeResult = binaryTreeFind redBlackTree (RedBlackNode Black target)
 
+-- | Convenient function to "create" a new empty tree.
 emptyRedBlackTree :: RedBlackTree a
 emptyRedBlackTree = Leaf

@@ -7,7 +7,7 @@ module Data.BinaryTree (
   TreeDirection (TreeDirection),
   TreeDirections,
   TreeFamily (IsRoot, HasParent, HasGrandparent),
-  TreeInsertResult (InsertOk, InsertNotYet, InsertFail),
+  TreeInsertResult (InsertOk, InsertNotYet, InsertMerge),
   TreeZipper,
 
   appendLeftChild,
@@ -93,11 +93,13 @@ type BranchZipper a = (TreeBranch a, TreeDirections a)
 -- attempted insert position
 -- (InsertNotYet obstructingTree directionToObstructingTree nodeToInsert) if there
 -- already is a tree obstructing the desired position, we must go further down
--- InsertFail Fatal error, can't create direction to new node
+-- InsertMerge the node to insert is equal to the tree's node so they were merged
+-- and the tree's size remains the same
 data TreeInsertResult a =
   InsertOk (TreeBranch a) (TreeDirection a)
   | InsertNotYet (BinaryTree a) (TreeDirection a) a
-  | InsertFail deriving (Show, Eq)
+  | InsertMerge (TreeBranch a)
+  deriving (Show, Eq)
 
 -- This type is used to answer questions about the current size of the tree and
 -- how deep can we go up in the tree. This is only used internally for the insert
@@ -180,8 +182,17 @@ appendRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
   where newBranch = TreeBranch Leaf nodeToAppend Leaf
         newDirection = TreeDirection RightBranch treeContent leftChild
 
+
+appendWithMerge :: (BinaryTreeNode a) => TreeBranch a -> a ->
+  TreeInsertResult a
+appendWithMerge (TreeBranch leftChild treeNode rightChild) nodeToAppend =
+  InsertMerge (TreeBranch leftChild mergedNode rightChild)
+  where mergedNode = mergeNodes treeNode nodeToAppend
+
 insertOrGoDown :: (BinaryTreeNode a) => TreeDirections a -> TreeInsertResult a
   -> BranchZipper a
+insertOrGoDown treeDirections (InsertMerge newBranch) =
+  (newBranch, treeDirections)
 insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
   (newBranch, newDirection:treeDirections)
 insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild
@@ -199,8 +210,10 @@ branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode =
   insertOrGoDown xs (appendFunction focusedBranch newNode)
   where
     focusedBranch = TreeBranch leftChild treeNode rightChild
-    appendFunction = if newNode <= treeNode then appendLeftChild
-                                            else appendRightChild
+    appendFunction
+      | newNode < treeNode = appendLeftChild
+      | newNode > treeNode = appendRightChild
+      | otherwise = appendWithMerge
 
 treeZipperInsert :: (BinaryTreeNode a) => TreeZipper a -> a -> BranchZipper a
 treeZipperInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)

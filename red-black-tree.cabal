@@ -2,7 +2,7 @@ name:                red-black-tree
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/red-black-tree#readme
+homepage:            https://github.com/GAumala/red-black-tree
 license:             BSD3
 license-file:        LICENSE
 author:              Gabriel Aumala
