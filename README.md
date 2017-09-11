@@ -2,9 +2,9 @@
 
 [![Build Status](https://travis-ci.org/GAumala/red-black-tree.svg?branch=master)](https://travis-ci.org/GAumala/red-black-tree)
 
-[Red Black Tree](https://twitter.com/kakimari/status/904075085652398080) data structure implemented in Haskell.
+[Red Black Tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree) data structure implemented in Haskell.
 
-The goal of this project is to provide an efficient generic structure that can insert and find elements in O(n) time.
+The goal of this project is to provide an efficient generic structure that can insert and find elements in O(log(n)) time.
 
 ## Usage
 
@@ -117,7 +117,7 @@ stack setup
 stack build
 ```
 
-To run unot tests with RSpec:
+To run unit tests with RSpec:
 
 ``` bash
 stack test
