@@ -67,6 +67,7 @@ up the name of the user whose address is "frank@gmail.com".
 
 ``` Haskell
 
+import Data.List (foldl')
 import Data.RedBlackTree
 import Data.User -- This module defines our User type
 
@@ -87,8 +88,8 @@ let users = [
 let treeWithOneUser = insert emptyRedBlackTree (User "gabriel@hotmail.com" "gabriel")
 let treeWithTwoUsers = insert treeWithOneUser (User "jimmy@live.com" "jimmy")
 
--- insert the whole list with foldl
-let userTree = foldl insert emptyRedBlackTree users
+-- insert the whole list with foldl'
+let userTree = foldl' insert emptyRedBlackTree users
 
 -- find the username with address "frank@gmail.com". The Eq instance of User only
 -- checks for email address, so we can leave the username empty in the target value

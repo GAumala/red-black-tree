@@ -8,6 +8,7 @@ module Data.TestUtils (
 import Test.Hspec
 import Data.BinaryTree
 import Data.RedBlackTree
+import Data.List (foldl')
 
 instance BinaryTreeNode Int where
   mergeNodes leftInt rightInt = leftInt
@@ -29,7 +30,7 @@ instance BinaryTreeNode ListNode where
 
 
 createTestTree :: (BinaryTreeNode a) => [a] -> RedBlackTree a
-createTestTree = foldl insert emptyRedBlackTree
+createTestTree = foldl' insert emptyRedBlackTree
 
 -- RedBlackNode's Eq instance is colorblind, so we need to test color separately
 shouldBeColor :: (BinaryTreeNode a) => RedBlackTree a -> RedBlack -> Expectation
