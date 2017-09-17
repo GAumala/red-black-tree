@@ -204,10 +204,13 @@ treeZipperInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
 treeZipperInsert (Branch leftChild treeNode rightChild, xs) newNode =
   branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode
 
+  -- | inserts an item to the binary tree. Returns a BranchZipper focusing
+  -- on the recently inserted branch.
 binaryTreeInsert :: (BinaryTreeNode a) => BinaryTree a -> a -> BranchZipper a
 binaryTreeInsert tree = treeZipperInsert treeZipper
   where treeZipper = (tree, [])
 
+  -- | Looks up an item in the binary tree. Returns Nothing if it was not found.
 binaryTreeFind :: (BinaryTreeNode a) => BinaryTree a -> a -> Maybe a
 binaryTreeFind Leaf _ = Nothing
 binaryTreeFind (Branch leftTree content rightTree) target

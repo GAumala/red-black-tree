@@ -78,58 +78,6 @@ identifyCases345 directions grandparentDirection parentDirection newBranch
         TreeDirection parentBranchType parentNode siblingTree = parentDirection
         RedBlackNode _ parentContent =  parentNode
 
-
-handleCase1 :: (BinaryTreeNode a) => TreeBranch (RedBlackNode a) -> RedBlackTree a
-handleCase1 (TreeBranch leftChild content rightChild) =
-  Branch leftChild (paintItBlack content) rightChild
-
-handleRBTCase :: (BinaryTreeNode a) => RBTCase a -> RedBlackTree a
-handleRBTCase (Case1 whiteRoot) = Branch leftChild rootNode rightChild
-  where WhiteBranch leftChild content rightChild = whiteRoot
-        rootNode = RedBlackNode Black content
-handleRBTCase (Case2 directionsFromRoot newBranch) = branch2Tree rootBranch
-  where branchZipper = (newBranch, directionsFromRoot)
-        (rootBranch, _) = getTreeRoot branchZipper
-handleRBTCase (Case3 directionsFromRoot content leftWBranch rightWBranch) =
-  (handleRBTCase . identifyRBTCase . getTreeFamily) branchZipper
-  where leftChild = whiteBranch2Tree leftWBranch Black
-        rightChild = whiteBranch2Tree rightWBranch Black
-        newNode = RedBlackNode Red content
-        newBranch = TreeBranch leftChild newNode rightChild
-        branchZipper = (newBranch, directionsFromRoot)
-handleRBTCase (Case4 directions grandparentDirection parentNode siblingTree
-  latestBranch) =
-  handleRBTCase (Case5 directions grandparentDirection newParentContent
-  newSiblingTree newLatestBranch)
-  where TreeBranch latestLeftTree (RedBlackNode _ childContent)
-          latestRightTree = latestBranch
-        TreeDirection grandparentDirectionType _ _ = grandparentDirection
-        newParentContent = childContent
-        newLatestNode = parentNode
-        newLatestBranch = if grandparentDirectionType == LeftBranch then
-          TreeBranch siblingTree newLatestNode latestLeftTree else
-          TreeBranch latestRightTree newLatestNode siblingTree
-        newSiblingTree = if grandparentDirectionType == LeftBranch then
-          latestRightTree else latestLeftTree
-handleRBTCase (Case5 directions grandparentDirection parentContent
-  siblingTree latestBranch) =
-  branch2Tree rootBranch
-  where TreeDirection grandparentDirectionType grandparentNode uncleTree =
-          grandparentDirection
-        RedBlackNode _ grandparentContent = grandparentNode
-        newTopNode = RedBlackNode Black parentContent
-        rotatedGrandparentNode = RedBlackNode Red grandparentContent
-        latestTree = branch2Tree latestBranch
-        needsRightRotation = grandparentDirectionType == LeftBranch
-        newSiblingTree = if needsRightRotation
-          then Branch siblingTree rotatedGrandparentNode uncleTree
-          else Branch uncleTree rotatedGrandparentNode siblingTree
-        rotatedBranch = if needsRightRotation
-          then TreeBranch latestTree newTopNode newSiblingTree
-          else TreeBranch newSiblingTree newTopNode latestTree
-        branchZipper = (rotatedBranch, directions)
-        (rootBranch, _) = getTreeRoot branchZipper
-
 identifyRBTCase :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a) ->
   RBTCase a
 identifyRBTCase (IsRoot rootBranch) = Case1 (removeBranchColor rootBranch)
@@ -148,23 +96,89 @@ identifyRBTCase (HasGrandparent directions grandparentDirection
         TreeBranch _ parentContent _ = parentBranch
         TreeBranch _ grandparentContent _ = grandparentBranch
 
+handleRBTCase1 :: (BinaryTreeNode a) => WhiteBranch a -> RedBlackTree a
+handleRBTCase1 whiteRoot = Branch leftChild rootNode rightChild
+  where WhiteBranch leftChild content rightChild = whiteRoot
+        rootNode = RedBlackNode Black content
 
-handleInsertedTreeFamily :: (BinaryTreeNode a) => TreeFamily (RedBlackNode a)
+handleRBTCase2 :: (BinaryTreeNode a) => RedBlackDirections a -> RedBlackBranch a
   -> RedBlackTree a
-handleInsertedTreeFamily (IsRoot rootBranch) = handleCase1 rootBranch
-handleInsertedTreeFamily (HasParent direction insertedBranch) =
-  branch2Tree parentBranch
-  where parentBranch = reconstructAncestor insertedBranch direction
-handleInsertedTreeFamily (HasGrandparent directions grandparentDirection
-  parentDirection insertedBranch) =
-    if parentBranch `branchIsColor` Black
-      then branch2Tree rootBranch
-      else handleCase1 rootBranch
-  where parentBranch = reconstructAncestor insertedBranch parentDirection
-        grandparentBranch = reconstructAncestor parentBranch
+handleRBTCase2 directionsFromRoot newBranch = branch2Tree rootBranch
+  where branchZipper = (newBranch, directionsFromRoot)
+        (rootBranch, _) = getTreeRoot branchZipper
+
+handleRBTCase3 :: (BinaryTreeNode a) => RedBlackDirections a -> a ->
+  WhiteBranch a -> WhiteBranch a -> RedBlackTree a
+handleRBTCase3 directionsFromRoot grandparentContent leftWBranch rightWBranch =
+  (handleRBTCase . identifyRBTCase . getTreeFamily) repaintedGrandparentZipper
+  where newLeftChild = whiteBranch2Tree leftWBranch Black
+        newRightChild = whiteBranch2Tree rightWBranch Black
+        newNode = RedBlackNode Red grandparentContent
+        newBranch = TreeBranch newLeftChild newNode newRightChild
+        repaintedGrandparentZipper = (newBranch, directionsFromRoot)
+
+handleRBTCase4 :: (BinaryTreeNode a) =>
+  RedBlackDirections a ->
+  RedBlackDirection a ->
+  RedBlackNode a ->
+  RedBlackTree a ->
+  RedBlackBranch a ->
+  RedBlackTree a
+handleRBTCase4 directions grandparentDirection parentNode siblingTree
+  latestBranch =
+  handleRBTCase (Case5 directions grandparentDirection newParentContent
+  newSiblingTree newLatestBranch)
+  where TreeBranch latestLeftTree (RedBlackNode _ childContent)
+          latestRightTree = latestBranch
+        TreeDirection grandparentDirectionType _ _ = grandparentDirection
+        newParentContent = childContent
+        newLatestNode = parentNode
+        newLatestBranch = if grandparentDirectionType == LeftBranch then
+          TreeBranch siblingTree newLatestNode latestLeftTree else
+          TreeBranch latestRightTree newLatestNode siblingTree
+        newSiblingTree = if grandparentDirectionType == LeftBranch then
+          latestRightTree else latestLeftTree
+
+handleRBTCase5 :: (BinaryTreeNode a) =>
+  RedBlackDirections a ->
+  RedBlackDirection a ->
+  a ->
+  RedBlackTree a ->
+  RedBlackBranch a ->
+  RedBlackTree a
+handleRBTCase5 directions grandparentDirection parentContent
+  siblingTree latestBranch =
+  branch2Tree postRotationRootBranch
+  where TreeDirection grandparentDirectionType grandparentNode uncleTree =
           grandparentDirection
-        grandparentZipper = (grandparentBranch, directions)
-        (rootBranch, _) = getTreeRoot grandparentZipper
+        RedBlackNode _ grandparentContent = grandparentNode
+        newTopNode = RedBlackNode Black parentContent
+        rotatedGrandparentNode = RedBlackNode Red grandparentContent
+        latestTree = branch2Tree latestBranch
+        needsRightRotation = grandparentDirectionType == LeftBranch
+        newSiblingTree = if needsRightRotation
+          then Branch siblingTree rotatedGrandparentNode uncleTree
+          else Branch uncleTree rotatedGrandparentNode siblingTree
+        rotatedBranch = if needsRightRotation
+          then TreeBranch latestTree newTopNode newSiblingTree
+          else TreeBranch newSiblingTree newTopNode latestTree
+        rotatedBranchZipper = (rotatedBranch, directions)
+        (postRotationRootBranch, _) = getTreeRoot rotatedBranchZipper
+
+handleRBTCase :: (BinaryTreeNode a) => RBTCase a -> RedBlackTree a
+handleRBTCase (Case1 whiteRoot) = handleRBTCase1 whiteRoot
+handleRBTCase (Case2 directionsFromRoot newBranch) =
+  handleRBTCase2 directionsFromRoot newBranch
+handleRBTCase (Case3 directionsFromRoot content leftWBranch rightWBranch) =
+  handleRBTCase3 directionsFromRoot content leftWBranch rightWBranch
+handleRBTCase (Case4 directions grandparentDirection parentNode siblingTree
+  latestBranch) =
+    handleRBTCase4 directions grandparentDirection parentNode siblingTree
+  latestBranch
+handleRBTCase (Case5 directions grandparentDirection parentContent
+  siblingTree latestBranch) =
+    handleRBTCase5 directions grandparentDirection parentContent
+  siblingTree latestBranch
 
 -- | inserts a new node to the tree, performing the necessary rotations to
 -- guarantee that the red black properties are kept after the insertion.

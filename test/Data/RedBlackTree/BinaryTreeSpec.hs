@@ -141,15 +141,14 @@ spec = do
 
     it "inserts at the correct position" $ do
       let newContent = 8
-      let startZipper = (emptyBranch, [])
       let expectedDirections = [ TreeDirection RightBranch emptyBranchContent Leaf ]
-      let newZipper = treeZipperInsert startZipper newContent
+      let newZipper = binaryTreeInsert emptyBranch newContent
 
       newZipper `shouldBe` (TreeBranch Leaf newContent Leaf, expectedDirections)
 
     it "should be able to create a full tree of size 3 from scratch only wth insertions" $ do
       let zipper1 = (Leaf, [])
-      let zipper2 = treeZipperInsert zipper1 node1
+      let zipper2 = binaryTreeInsert Leaf node1
       zipper2 `shouldBe` (TreeBranch Leaf node1 Leaf, [])
 
       let treeBranchNode2 = TreeBranch Leaf node2 Leaf
@@ -166,13 +165,13 @@ spec = do
     it "should be able to create a full tree of size 5 wth insertions" $ do
       let initialLeftChild = Branch Leaf node2 Leaf
       let initialRightChild = Branch Leaf node3 Leaf
-      let zipper1 = (Branch initialLeftChild node1 initialRightChild, [])
+      let tree1 = Branch initialLeftChild node1 initialRightChild
 
       let zipper2Branch = TreeBranch Leaf node4 Leaf
       let zipper2Tree = Branch Leaf node4 Leaf
       let zipper2Directions = [ TreeDirection LeftBranch node2 Leaf
                               , TreeDirection LeftBranch node1 initialRightChild ]
-      let zipper2 = treeZipperInsert zipper1 node4
+      let zipper2 = binaryTreeInsert tree1 node4
 
       zipper2 `shouldBe` (zipper2Branch, zipper2Directions)
 
@@ -188,13 +187,13 @@ spec = do
       let initialLeftRightChild = Branch Leaf node5 Leaf
       let initialLeftChild = Branch initialLeftLeftChild node2 initialLeftRightChild
       let initialRightChild = Branch Leaf node3 Leaf
-      let zipper1 = (Branch initialLeftChild node1 initialRightChild, [])
+      let tree1 = Branch initialLeftChild node1 initialRightChild
 
       let zipper2Branch = TreeBranch Leaf node6 Leaf
       let zipper2Tree = Branch Leaf node6 Leaf
       let zipper2Directions = [ TreeDirection LeftBranch node3 Leaf
                               , TreeDirection RightBranch node1 initialLeftChild ]
-      let zipper2 = treeZipperInsert zipper1 node6
+      let zipper2 = binaryTreeInsert tree1 node6
 
       zipper2 `shouldBe` (zipper2Branch, zipper2Directions)
 
