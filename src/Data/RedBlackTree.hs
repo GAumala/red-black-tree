@@ -8,3 +8,4 @@ module Data.RedBlackTree (
 ) where
 
 import Data.RedBlackTree.Internal
+import Data.RedBlackTree.InsertionAlgorithm (insert)

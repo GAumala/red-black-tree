@@ -16,6 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Data.RedBlackTree.Internal
+                     , Data.RedBlackTree.TreeFamily
+                     , Data.RedBlackTree.InsertionAlgorithm
                      , Data.RedBlackTree.BinaryTree
                      , Data.RedBlackTree
   build-depends:       base >= 4.7 && < 5
@@ -26,6 +28,7 @@ test-suite red-black-tree-test
   hs-source-dirs:      test
   other-modules:       Data.RedBlackTree.BinaryTreeSpec
                      , Data.RedBlackTree.InternalSpec
+                     , Data.RedBlackTree.InsertionAlgorithmSpec
                      , Data.RedBlackTree.RedBlackTreeAssertions
                      , Data.RedBlackTree.RedBlackTreeAssertionsSpec
                      , Data.RedBlackTreeSpec

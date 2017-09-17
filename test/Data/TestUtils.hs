@@ -7,6 +7,7 @@ module Data.TestUtils (
 import Test.Hspec
 import Data.RedBlackTree.BinaryTree
 import Data.RedBlackTree.Internal
+import Data.RedBlackTree.InsertionAlgorithm
 import Data.List (foldl')
 
 instance BinaryTreeNode Int where
