@@ -11,6 +11,7 @@ module Data.RedBlackTree.BinaryTree (
 
   appendLeftChild,
   appendRightChild,
+  binaryTreeInsert,
   binaryTreeFind,
   branch2Tree,
   branchZipperInsert,
@@ -18,8 +19,8 @@ module Data.RedBlackTree.BinaryTree (
   goLeft,
   goUp,
   goRight,
-  reconstructAncestor,
-  treeZipperInsert) where
+  reconstructAncestor
+  ) where
 
 import Data.Maybe
 
@@ -202,6 +203,10 @@ treeZipperInsert :: (BinaryTreeNode a) => TreeZipper a -> a -> BranchZipper a
 treeZipperInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
 treeZipperInsert (Branch leftChild treeNode rightChild, xs) newNode =
   branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode
+
+binaryTreeInsert :: (BinaryTreeNode a) => BinaryTree a -> a -> BranchZipper a
+binaryTreeInsert tree = treeZipperInsert treeZipper
+  where treeZipper = (tree, [])
 
 binaryTreeFind :: (BinaryTreeNode a) => BinaryTree a -> a -> Maybe a
 binaryTreeFind Leaf _ = Nothing

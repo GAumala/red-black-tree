@@ -169,13 +169,13 @@ handleInsertedTreeFamily (HasGrandparent directions grandparentDirection
 -- | inserts a new node to the tree, performing the necessary rotations to
 -- guarantee that the red black properties are kept after the insertion.
 insert :: (BinaryTreeNode a) => RedBlackTree a -> a -> RedBlackTree a
-insert treeRoot newItem = if insertedContent `isColor` Black
-                          then branch2Tree newRootBranch
-                          else (handleRBTCase . identifyRBTCase) treeFamily
+insert tree newItem = if insertedNode `isColor` Black
+                      then newTreeWithNewItem
+                      else (handleRBTCase . identifyRBTCase) insertedTreeFamily
   where newNode = RedBlackNode Red newItem
-        rootZipper = (treeRoot, [])
-        (insertedTreeBranch, directions) = treeZipperInsert rootZipper newNode
-        TreeBranch _ insertedContent _ = insertedTreeBranch
+        (insertedTreeBranch, directions) = binaryTreeInsert tree newNode
+        TreeBranch _ insertedNode _ = insertedTreeBranch
         insertedBranchZipper = (insertedTreeBranch, directions)
-        (newRootBranch, _) = getTreeRoot insertedBranchZipper
-        treeFamily = getTreeFamily insertedBranchZipper
+        (rootBranch, _) = getTreeRoot insertedBranchZipper
+        newTreeWithNewItem = branch2Tree rootBranch
+        insertedTreeFamily = getTreeFamily insertedBranchZipper
