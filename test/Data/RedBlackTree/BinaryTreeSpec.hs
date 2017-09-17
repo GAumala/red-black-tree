@@ -1,7 +1,7 @@
-module Data.BinaryTreeSpec (spec) where
+module Data.RedBlackTree.BinaryTreeSpec (spec) where
 
 import Test.Hspec
-import Data.BinaryTree
+import Data.RedBlackTree.BinaryTree
 
 
 instance BinaryTreeNode Int where

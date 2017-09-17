@@ -1,4 +1,4 @@
-module Data.BinaryTree (
+module Data.RedBlackTree.BinaryTree (
   BinaryTreeNode (mergeNodes),
   BinaryTree (Leaf, Branch),
   BranchType (LeftBranch, RightBranch),
