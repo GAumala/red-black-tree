@@ -118,7 +118,7 @@ stack setup
 stack build
 ```
 
-To run unit tests with RSpec:
+To run unit tests with HSpec:
 
 ``` bash
 stack test
