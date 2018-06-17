@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 import Data.List (foldl')
 import qualified Data.Sequence as S
 import Data.RedBlackTree.BinaryTree
@@ -10,16 +9,16 @@ getBalancedValues [] = []
 getBalancedValues [a] = [a] 
 getBalancedValues [a, b] = [a, b] 
 getBalancedValues [a, b, c] = [b, a, c] 
-getBalancedValues originalValues = centerValue `seq` remainder `seq` (centerValue:remainder)
+getBalancedValues originalValues = centerValue `seq` centerValue:remainder
   where len = length originalValues
         breakPoint = truncate $ (fromIntegral len) / 2
         lvalues = take breakPoint originalValues
         (centerValue:rvalues) = drop breakPoint originalValues
-        remainder = concat [getBalancedValues lvalues, getBalancedValues rvalues]
+        remainder = getBalancedValues lvalues ++ getBalancedValues rvalues
 
 insertToBalancedTree :: BinaryTree Int -> Int -> BinaryTree Int
-insertToBalancedTree !tree !newValue = newTree
-  where !newTree = betterInsert'' tree newValue
+insertToBalancedTree tree newValue = newTree
+  where newTree = betterInsert'' tree newValue
 
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing
@@ -29,8 +28,7 @@ leftMostValue (Branch ltree _  _) = leftMostValue ltree
 runBinaryTreeTest :: [Int] -> String
 runBinaryTreeTest items =
     let 
-        balancedValues = getBalancedValues items
-        tree = foldl' insertToBalancedTree Leaf balancedValues
+        tree = foldl' insertToBalancedTree Leaf items
         leftMost = leftMostValue tree
     in
       "constructed tree of with left most value:  " ++ (show leftMost)
@@ -50,5 +48,5 @@ runSequenceTest ints =
 
 main :: IO ()
 main = putStrLn $ runBinaryTreeTest items
-  where items = [1..(truncate 1e5)] :: [Int]
+  where items = getBalancedValues $ [1..(truncate 1e5)] :: [Int]
 
