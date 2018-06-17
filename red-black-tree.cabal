@@ -45,6 +45,7 @@ executable test-app
   hs-source-dirs:      app
   main-is:             App.hs
   build-depends:       base
+                     , containers
                      , red-black-tree
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N 
 

@@ -24,10 +24,8 @@ data RedBlack = Red | Black deriving (Show, Eq, Ord)
 
 -- | a @RedBlackNode@ contains only two elements, the color of the node and the
 -- actual content.
-data RedBlackNode a = RedBlackNode {
-  nodeColor :: RedBlack,
-  content :: a
-} deriving (Show)
+data RedBlackNode a = RedBlackNode !RedBlack !a
+  deriving (Show)
 
 instance (BinaryTreeNode a) => BinaryTreeNode (RedBlackNode a)  where
   mergeNodes leftNode rightNode = RedBlackNode color mergedContent
@@ -42,7 +40,6 @@ instance (BinaryTreeNode a) => Ord (RedBlackNode a) where
 instance (BinaryTreeNode a) => Eq (RedBlackNode a) where
   (RedBlackNode _ lcontent) == (RedBlackNode _ rcontent) =
     lcontent == rcontent
-
 
 
 -- | A @BinaryTree@ with only nodes of type @RedBlackNode. is either a leaf
@@ -65,7 +62,7 @@ type RedBlackDirections a = [ RedBlackDirection a ]
 
 -- Holds all the data of a @RedBlackBranch@ except for the color of the node
 -- at the top of the branch
-data WhiteBranch a = WhiteBranch (RedBlackTree a) a (RedBlackTree a)
+data WhiteBranch a = WhiteBranch (RedBlackTree a) !a (RedBlackTree a)
   deriving (Eq, Ord, Show)
 
 
