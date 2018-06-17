@@ -4,8 +4,6 @@ import qualified Data.Sequence as S
 import Data.RedBlackTree.BinaryTree
 import Data.RedBlackTree
 
-instance BinaryTreeNode Int where
-  mergeNodes leftInt rightInt = leftInt
 
 getBalancedValues :: [Int] -> [Int]
 getBalancedValues [] = [] 
@@ -21,7 +19,7 @@ getBalancedValues originalValues = centerValue `seq` remainder `seq` (centerValu
 
 insertToBalancedTree :: BinaryTree Int -> Int -> BinaryTree Int
 insertToBalancedTree !tree !newValue = newTree
-  where !newTree = betterInsert tree newValue
+  where !newTree = betterInsert'' tree newValue
 
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing
@@ -36,14 +34,6 @@ runBinaryTreeTest items =
         leftMost = leftMostValue tree
     in
       "constructed tree of with left most value:  " ++ (show leftMost)
-
-runRBTreeTest :: [Int] -> String
-runRBTreeTest items =
-    let 
-        tree = foldl' insert emptyRedBlackTree items
-        height = getBlackHeight tree
-    in
-      "constructed tree of size " ++ (show height)
 
 insertTriples :: S.Seq Int -> Int -> S.Seq Int
 insertTriples sequence newInt = sequence S.|> newTriple 

@@ -1,52 +1,25 @@
 {-# LANGUAGE BangPatterns #-}
 
 module Data.RedBlackTree.BinaryTree (
-  BinaryTreeNode (mergeNodes),
   BinaryTree (Leaf, Branch),
-  BranchType (LeftBranch, RightBranch),
-  BranchZipper,
   TreeBranch (TreeBranch),
   TreeDirection (TreeDirection),
   TreeDirections,
-  TreeInsertResult (InsertOk, InsertNotYet, InsertMerge),
-  TreeZipper,
 
-  attemptToInsertAsLeftChild,
-  attemptToInsertAsRightChild,
   betterInsert,
-  binaryTreeInsert,
-  binaryTreeFind,
-  branch2Tree,
-  branchZipperInsert,
-  getTreeRoot,
-  goLeft,
-  goUp,
-  goRight,
-  reconstructAncestor
+  betterInsert'',
+  binaryTreeFind
   ) where
 
 import Data.Maybe
 
-
--- Only types that are members of @BinaryTreeNode@ can be inserted into a
--- @BinaryTree@. The purpose of the class is to provide a method to merge nodes
--- with equal values since inserting different nodes with equal values can
--- corrupt the tree.
-class (Ord a) => BinaryTreeNode a where
-  -- The @BinaryTree@ will call this function when it tries to insert a value
-  -- that already exists in the tree. The first argument is guaranteed to be the
-  -- one that is already in the tree, while the second argument is the node that
-  -- the tree is trying to insert. Since the two nodes can't exist in the same tree
-  -- The result should be a 'merged' node that will be inserted instead of the
-  -- other two.
-  mergeNodes :: a -> a -> a
 
 -- A BinaryTree is either a leaf (empty) or a @BinaryTreeNode@ with 2
 -- @BinaryTree@ children, left and right
 data BinaryTree a = Leaf | Branch (BinaryTree a) !a (BinaryTree a)
   deriving (Eq, Ord)
 
-instance (BinaryTreeNode a, Show a) => Show (BinaryTree a) where
+instance (Show a) => Show (BinaryTree a) where
   show tree = prettyPrintTree tree 0
     where
       addSpaces num = replicate num ' '
@@ -73,150 +46,13 @@ data TreeDirection a = TreeDirection !BranchType !a (BinaryTree a)
 -- List of @TreeDirection@
 type TreeDirections a = [TreeDirection a]
 
--- A @BinaryTree@ zipper. the first value of the tuple is the focused @BinaryTree@,
--- while the second argument is the list of directions used to move up to the
--- parent and other ancestors.
-type TreeZipper a = (BinaryTree a, TreeDirections a)
-
 -- Holds the data of a @BinaryTree@ created with the @Branch@ constructor. Useful
 -- type when you want to guarantee that the element is not a @Leaf@
 data TreeBranch a = TreeBranch (BinaryTree a) !a (BinaryTree a)
   deriving (Eq, Ord)
 
-instance (BinaryTreeNode a, Show a) => Show (TreeBranch a) where
-  show (TreeBranch leftChild content rightChild) =
-    show (Branch leftChild content rightChild)
 
--- A @TreeBranch@ zipper. It is identical to @TreeZipper@ except for the fact
--- that @Leaf@ values are not allowed in the zipper.
-type BranchZipper a = (TreeBranch a, TreeDirections a)
-
--- The result from inserting a node to the left or right of a tree can be:
--- (InsertOk insertedTree directionToNewTree) if there is a leaf at the
--- attempted insert position
--- (InsertNotYet obstructingTree directionToObstructingTree nodeToInsert) if there
--- already is a tree obstructing the desired position, we must go further down
--- InsertMerge the node to insert is equal to the tree's node so they were merged
--- and the tree's size remains the same
-data TreeInsertResult a =
-  InsertOk (TreeBranch a) (TreeDirection a)
-  | InsertNotYet (BinaryTree a) (TreeDirection a) !a
-  | InsertMerge (TreeBranch a)
-  deriving (Show, Eq)
-
-
-isLeftTreeDirection :: (BinaryTreeNode a) => TreeDirection a -> Bool
-isLeftTreeDirection (TreeDirection branchType _ _) = branchType == LeftBranch
-
-getTreeContent :: (BinaryTreeNode a) => BinaryTree a -> Maybe a
-getTreeContent (Branch _ content _) = Just content
-getTreeContent Leaf = Nothing
-
-branch2Tree :: (BinaryTreeNode a) => TreeBranch a -> BinaryTree a
-branch2Tree (TreeBranch leftChild content rightChild) =
-  Branch leftChild content rightChild
-
--- Move the zipper down to the left child, returns nothing if focused node is
---  leaf
-goLeft :: (BinaryTreeNode a) => BranchZipper a -> TreeZipper a
-goLeft (TreeBranch leftChild treeNode rightChild, xs) =
-  (leftChild, TreeDirection LeftBranch treeNode rightChild:xs)
-
--- Move the zipper down to the right child, returns nothing if focused node is
--- a leaf
-goRight :: (BinaryTreeNode a) => BranchZipper a -> TreeZipper a
-goRight (TreeBranch leftChild treeNode rightChild, xs) =
-  (rightChild, TreeDirection RightBranch treeNode leftChild:xs)
-
--- get the parent of a branch given the direction from the parent to the branch
-reconstructAncestor :: (BinaryTreeNode a) => TreeBranch a -> TreeDirection a ->
-  TreeBranch a
-reconstructAncestor currentBranch (TreeDirection branchType parentContent
-  sibling) =
-  if branchType == LeftBranch
-    then TreeBranch currentTree parentContent sibling
-    else TreeBranch sibling parentContent currentTree
-    where currentTree = branch2Tree currentBranch
-
--- Move the zipper up to the parent, returns nothing directions list is empty
-goUp :: (BinaryTreeNode a) => BranchZipper a -> Maybe (BranchZipper a)
-goUp (_, []) = Nothing
-goUp (currentBranch, direction:xs) =
-  Just (reconstructAncestor currentBranch direction, xs)
-
-getTreeRoot :: (BinaryTreeNode a) => BranchZipper a -> BranchZipper a
-getTreeRoot (branch, []) = (branch, [])
-getTreeRoot zipper = case goUp zipper of
-  Just prevZipper -> getTreeRoot prevZipper
-  Nothing -> zipper
-
-attemptToInsertAsLeftChild :: (BinaryTreeNode a) => TreeBranch a -> a -> TreeInsertResult a
-attemptToInsertAsLeftChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
-  if leftChild == Leaf then
-    InsertOk newBranch newDirection
-  else
-    InsertNotYet leftChild newDirection nodeToAppend
-  where newBranch = TreeBranch Leaf nodeToAppend Leaf
-        newDirection = TreeDirection LeftBranch treeContent rightChild
-
-attemptToInsertAsRightChild :: (BinaryTreeNode a) => TreeBranch a -> a ->
-  TreeInsertResult a
-attemptToInsertAsRightChild (TreeBranch leftChild treeContent rightChild) nodeToAppend =
-  if rightChild == Leaf then
-    InsertOk newBranch newDirection
-  else
-    InsertNotYet rightChild newDirection nodeToAppend
-  where newBranch = TreeBranch Leaf nodeToAppend Leaf
-        newDirection = TreeDirection RightBranch treeContent leftChild
-
-
-insertWithMerge :: (BinaryTreeNode a) => TreeBranch a -> a ->
-  TreeInsertResult a
-insertWithMerge (TreeBranch leftChild treeNode rightChild) nodeToAppend =
-  InsertMerge (TreeBranch leftChild mergedNode rightChild)
-  where mergedNode = mergeNodes treeNode nodeToAppend
-
-insertOrGoDown :: (BinaryTreeNode a) => TreeDirections a -> TreeInsertResult a
-  -> BranchZipper a
-insertOrGoDown treeDirections (InsertMerge newBranch) =
-  (newBranch, treeDirections)
-insertOrGoDown treeDirections (InsertOk newBranch newDirection) =
-  (newBranch, newDirection:treeDirections)
-insertOrGoDown treeDirections (InsertNotYet existingChild directionToChild
-  childToInsert) =
-  treeZipperInsert (existingChild, directionToChild:treeDirections)
-    childToInsert
-
-attemptToInsert :: (BinaryTreeNode a) => TreeBranch a -> a -> TreeInsertResult a
-attemptToInsert targetBranch nodeToInsert 
-  | nodeToInsert < currentNode = attemptToInsertAsLeftChild targetBranch nodeToInsert
-  | nodeToInsert > currentNode = attemptToInsertAsRightChild targetBranch nodeToInsert
-  | otherwise = insertWithMerge targetBranch nodeToInsert
-  where TreeBranch _ currentNode _ = targetBranch
-
-branchZipperToTreeZipper :: (BinaryTreeNode a) => BranchZipper a -> TreeZipper a
-branchZipperToTreeZipper (TreeBranch leftChild content rightChild, xs) =
-  (Branch leftChild content rightChild, xs)
-
-branchZipperInsert :: (BinaryTreeNode a) => BranchZipper a -> a ->
-  BranchZipper a
-branchZipperInsert (focusedBranch, xs) newNode =
-  insertOrGoDown xs treeInsertResult
-  where
-    treeInsertResult = attemptToInsert focusedBranch newNode
-
-treeZipperInsert :: (BinaryTreeNode a) => TreeZipper a -> a -> BranchZipper a
-treeZipperInsert (Leaf, xs) newNode = (TreeBranch Leaf newNode Leaf, xs)
-treeZipperInsert (Branch leftChild treeNode rightChild, xs) newNode =
-  branchZipperInsert (TreeBranch leftChild treeNode rightChild, xs) newNode
-
-  -- | inserts an item to the binary tree. Returns a BranchZipper focusing
-  -- on the recently inserted branch.
-binaryTreeInsert :: (BinaryTreeNode a) => BinaryTree a -> a -> BranchZipper a
-binaryTreeInsert tree = treeZipperInsert treeZipper
-  where treeZipper = (tree, [])
-
-reconstructTree :: (BinaryTreeNode a) => [TreeDirection a] -> BinaryTree a -> BinaryTree a
+reconstructTree :: [TreeDirection a] -> BinaryTree a -> BinaryTree a
 reconstructTree [] childTree = childTree
 reconstructTree (parentDirection:directions) childTree = 
     directions `seq` parentTree `seq` reconstructTree directions parentTree
@@ -225,7 +61,7 @@ reconstructTree (parentDirection:directions) childTree =
         !rightTree = if branchType == LeftBranch then siblingTree else childTree 
         !parentTree = Branch leftTree parentValue rightTree
 
-betterInsert' :: (BinaryTreeNode a) => [TreeDirection a] -> BinaryTree a -> a -> BinaryTree a
+betterInsert' :: (Ord a) => [TreeDirection a] -> BinaryTree a -> a -> BinaryTree a
 betterInsert' directions Leaf newItem = reconstructTree directions newTree
   where !newTree = Branch Leaf newItem Leaf
 betterInsert' directions !tree !newItem 
@@ -238,17 +74,32 @@ betterInsert' directions !tree !newItem
     in betterInsert' (newDirection:directions) rightTree newItem
 
   | otherwise = 
-    let mergedItem = mergeNodes currentItem newItem
+    let mergedItem = currentItem -- TODO fix this
         mergedTree = Branch leftTree mergedItem rightTree
     in reconstructTree directions mergedTree
 
   where Branch leftTree !currentItem rightTree = tree 
 
-betterInsert :: (BinaryTreeNode a) => BinaryTree a -> a -> BinaryTree a
+betterInsert'' :: (Ord a) => BinaryTree a -> a -> BinaryTree a
+betterInsert'' Leaf newItem = Branch Leaf newItem Leaf
+betterInsert'' tree !newItem
+  | newItem < currentItem =  
+    let !updatedTree = leftTree `seq` betterInsert'' leftTree newItem
+    in Branch updatedTree currentItem rightTree
+
+  | newItem > currentItem =  
+    let !updatedTree = rightTree `seq` betterInsert'' rightTree newItem
+    in Branch leftTree currentItem updatedTree
+
+  | otherwise = tree --should try to merge nodes
+
+  where Branch leftTree !currentItem rightTree = tree 
+
+betterInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 betterInsert = betterInsert' []
         
 -- | Looks up an item in the binary tree. Returns Nothing if it was not found.
-binaryTreeFind :: (BinaryTreeNode a) => BinaryTree a -> a -> Maybe a
+binaryTreeFind :: (Eq a, Ord a) => BinaryTree a -> a -> Maybe a
 binaryTreeFind Leaf _ = Nothing
 binaryTreeFind (Branch leftTree content rightTree) target
   | target == content = Just content

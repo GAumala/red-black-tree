@@ -1,7 +1,4 @@
 module Data.RedBlackTree (
-  emptyRedBlackTree,
-  find,
-  getBlackHeight,
   insert,
 
   RedBlackTree,
