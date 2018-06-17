@@ -16,7 +16,7 @@ import Data.Maybe
 
 -- A BinaryTree is either a leaf (empty) or a @BinaryTreeNode@ with 2
 -- @BinaryTree@ children, left and right
-data BinaryTree a = Leaf | Branch (BinaryTree a) !a (BinaryTree a)
+data BinaryTree a = Leaf | Branch (BinaryTree a) a (BinaryTree a)
   deriving (Eq, Ord)
 
 instance (Show a) => Show (BinaryTree a) where
@@ -34,13 +34,13 @@ instance (Show a) => Show (BinaryTree a) where
 
 
 -- A BinaryTree can only have two types of branches: Left or Right
-data BranchType = LeftBranch | RightBranch deriving (Show, Eq, Ord)
+data TreeSide = LeftBranch | RightBranch deriving (Show, Eq, Ord)
 
 -- Minimum necessary to reconstruct the parent of any focused node. First argument
--- is the @BranchType@ of the focused node relative to the parent. Second argument
+-- is the @TreeSide@ of the focused node relative to the parent. Second argument
 -- is the parent's node. The third argument is the sibling tree of the focused
 -- node.
-data TreeDirection a = TreeDirection !BranchType !a (BinaryTree a)
+data TreeDirection a = TreeDirection !TreeSide a (BinaryTree a)
   deriving (Show, Eq, Ord)
 
 -- List of @TreeDirection@
@@ -82,18 +82,18 @@ betterInsert' directions !tree !newItem
 
 betterInsert'' :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 betterInsert'' Leaf newItem = Branch Leaf newItem Leaf
-betterInsert'' tree !newItem
+betterInsert'' tree newItem
   | newItem < currentItem =  
-    let !updatedTree = leftTree `seq` betterInsert'' leftTree newItem
+    let updatedTree = betterInsert'' leftTree newItem
     in Branch updatedTree currentItem rightTree
 
   | newItem > currentItem =  
-    let !updatedTree = rightTree `seq` betterInsert'' rightTree newItem
+    let updatedTree = betterInsert'' rightTree newItem
     in Branch leftTree currentItem updatedTree
 
   | otherwise = tree --should try to merge nodes
 
-  where Branch leftTree !currentItem rightTree = tree 
+  where Branch leftTree currentItem rightTree = tree 
 
 betterInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 betterInsert = betterInsert' []
