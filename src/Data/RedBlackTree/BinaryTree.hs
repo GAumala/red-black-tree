@@ -1,13 +1,11 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Data.RedBlackTree.BinaryTree (
   BinaryTree (Leaf, Branch),
   TreeBranch (TreeBranch),
   TreeDirection (TreeDirection),
   TreeDirections,
 
-  betterInsert,
-  betterInsert'',
+  binaryTreeInsertWith,
+  binaryTreeInsert,
   binaryTreeFind
   ) where
 
@@ -51,53 +49,26 @@ type TreeDirections a = [TreeDirection a]
 data TreeBranch a = TreeBranch (BinaryTree a) !a (BinaryTree a)
   deriving (Eq, Ord)
 
-
-reconstructTree :: [TreeDirection a] -> BinaryTree a -> BinaryTree a
-reconstructTree [] childTree = childTree
-reconstructTree (parentDirection:directions) childTree = 
-    directions `seq` parentTree `seq` reconstructTree directions parentTree
-  where TreeDirection branchType parentValue siblingTree = parentDirection
-        !leftTree = if branchType == LeftBranch then childTree else siblingTree 
-        !rightTree = if branchType == LeftBranch then siblingTree else childTree 
-        !parentTree = Branch leftTree parentValue rightTree
-
-betterInsert' :: (Ord a) => [TreeDirection a] -> BinaryTree a -> a -> BinaryTree a
-betterInsert' directions Leaf newItem = reconstructTree directions newTree
-  where !newTree = Branch Leaf newItem Leaf
-betterInsert' directions !tree !newItem 
-  | newItem < currentItem = 
-    let !newDirection = TreeDirection LeftBranch currentItem rightTree
-    in betterInsert' (newDirection:directions) leftTree newItem
-
-  | newItem > currentItem = 
-    let !newDirection = TreeDirection RightBranch currentItem leftTree
-    in betterInsert' (newDirection:directions) rightTree newItem
-
-  | otherwise = 
-    let mergedItem = currentItem -- TODO fix this
-        mergedTree = Branch leftTree mergedItem rightTree
-    in reconstructTree directions mergedTree
-
-  where Branch leftTree !currentItem rightTree = tree 
-
-betterInsert'' :: (Ord a) => BinaryTree a -> a -> BinaryTree a
-betterInsert'' Leaf newItem = Branch Leaf newItem Leaf
-betterInsert'' tree newItem
+binaryTreeInsertWith :: (Ord a) => (a -> a -> a) -> BinaryTree a -> a -> BinaryTree a
+binaryTreeInsertWith _ Leaf newItem = Branch Leaf newItem Leaf
+binaryTreeInsertWith mergeFn tree newItem
   | newItem < currentItem =  
-    let updatedTree = betterInsert'' leftTree newItem
+    let updatedTree = binaryTreeInsertWith mergeFn leftTree newItem
     in Branch updatedTree currentItem rightTree
 
   | newItem > currentItem =  
-    let updatedTree = betterInsert'' rightTree newItem
+    let updatedTree = binaryTreeInsertWith mergeFn rightTree newItem
     in Branch leftTree currentItem updatedTree
 
-  | otherwise = tree --should try to merge nodes
+  | otherwise = 
+    let mergedItem = mergeFn currentItem newItem
+    in Branch leftTree mergedItem rightTree
 
   where Branch leftTree currentItem rightTree = tree 
 
-betterInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
-betterInsert = betterInsert' []
-        
+binaryTreeInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
+binaryTreeInsert = binaryTreeInsertWith const
+
 -- | Looks up an item in the binary tree. Returns Nothing if it was not found.
 binaryTreeFind :: (Eq a, Ord a) => BinaryTree a -> a -> Maybe a
 binaryTreeFind Leaf _ = Nothing

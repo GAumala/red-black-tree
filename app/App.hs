@@ -18,7 +18,7 @@ getBalancedValues originalValues = centerValue `seq` centerValue:remainder
 
 insertToBalancedTree :: BinaryTree Int -> Int -> BinaryTree Int
 insertToBalancedTree tree newValue = newTree
-  where newTree = betterInsert'' tree newValue
+  where newTree = binaryTreeInsert tree newValue
 
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing
