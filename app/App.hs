@@ -1,7 +1,6 @@
 import Data.List (foldl')
 import qualified Data.Sequence as S
 import Data.RedBlackTree.BinaryTree
-import Data.RedBlackTree
 
 
 getBalancedValues :: [Int] -> [Int]
@@ -16,14 +15,19 @@ getBalancedValues originalValues = centerValue `seq` centerValue:remainder
         (centerValue:rvalues) = drop breakPoint originalValues
         remainder = getBalancedValues lvalues ++ getBalancedValues rvalues
 
-insertToBalancedTree :: BinaryTree Int -> Int -> BinaryTree Int
+insertToBalancedTree :: RedBlackTree2 Int -> Int -> RedBlackTree2 Int
 insertToBalancedTree tree newValue = newTree
-  where newTree = binaryTreeInsert tree newValue
+  where newTree = redBlackTreeInsert tree newValue
 
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing
 leftMostValue (Branch Leaf value _) = Just value
 leftMostValue (Branch ltree _  _) = leftMostValue ltree
+
+rightMostValue :: BinaryTree a -> Maybe a
+rightMostValue Leaf = Nothing
+rightMostValue (Branch _ value Leaf) = Just value
+rightMostValue (Branch _ _ rtree) = rightMostValue rtree
 
 runBinaryTreeTest :: [Int] -> String
 runBinaryTreeTest items =

@@ -1,12 +1,16 @@
 module Data.RedBlackTree.BinaryTree (
   BinaryTree (Leaf, Branch),
+  RedBlackTree2,
   TreeBranch (TreeBranch),
   TreeDirection (TreeDirection),
   TreeDirections,
 
   binaryTreeInsertWith,
   binaryTreeInsert,
-  binaryTreeFind
+  binaryTreeFind,
+
+  redBlackTreeInsertWith,
+  redBlackTreeInsert,
   ) where
 
 import Data.Maybe
@@ -49,7 +53,8 @@ type TreeDirections a = [TreeDirection a]
 data TreeBranch a = TreeBranch (BinaryTree a) !a (BinaryTree a)
   deriving (Eq, Ord)
 
-binaryTreeInsertWith :: (Ord a) => (a -> a -> a) -> BinaryTree a -> a -> BinaryTree a
+{-# SPECIALIZE binaryTreeInsertWith :: (Ord a) => MergeFn (RBNode a) -> BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
+binaryTreeInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
 binaryTreeInsertWith _ Leaf newItem = Branch Leaf newItem Leaf
 binaryTreeInsertWith mergeFn tree newItem
   | newItem < currentItem =  
@@ -66,6 +71,7 @@ binaryTreeInsertWith mergeFn tree newItem
 
   where Branch leftTree currentItem rightTree = tree 
 
+{-# SPECIALIZE binaryTreeInsert :: Ord a => BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 binaryTreeInsert = binaryTreeInsertWith const
 
@@ -76,3 +82,27 @@ binaryTreeFind (Branch leftTree content rightTree) target
   | target == content = Just content
   | target < content = binaryTreeFind leftTree target
   | target > content = binaryTreeFind rightTree target
+
+
+data RBColor = Red | Black
+  deriving (Eq, Ord, Show)
+
+data RBNode a = RBNode RBColor a
+  deriving (Eq, Ord, Show)
+
+type MergeFn a = a -> a -> a
+
+type RedBlackTree2 a = BinaryTree (RBNode a)
+
+mergeRBNodes :: MergeFn a -> (RBNode a -> RBNode a -> RBNode a)
+mergeRBNodes mergeFn (RBNode existingColor x) (RBNode _ y) = 
+  RBNode existingColor (mergeFn x y)
+
+redBlackTreeInsertWith :: (Ord a) => MergeFn a -> RedBlackTree2 a -> a -> RedBlackTree2 a
+redBlackTreeInsertWith mergeFn tree newItem = 
+  let newRBNode = RBNode Red newItem
+      mergeRBNodesFn = mergeRBNodes mergeFn
+  in binaryTreeInsertWith mergeRBNodesFn tree newRBNode 
+
+redBlackTreeInsert :: (Ord a) => RedBlackTree2 a -> a -> RedBlackTree2 a
+redBlackTreeInsert = redBlackTreeInsertWith const
