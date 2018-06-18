@@ -88,7 +88,13 @@ data RBColor = Red | Black
   deriving (Eq, Ord, Show)
 
 data RBNode a = RBNode RBColor a
-  deriving (Eq, Ord, Show)
+  deriving (Show)
+
+instance (Eq a) => Eq (RBNode a) where
+  (RBNode _ x) == (RBNode _ y) = x == y
+
+instance (Ord a) => Ord (RBNode a) where
+  (RBNode _ x) <= (RBNode _ y) = x <= y
 
 type MergeFn a = a -> a -> a
 
