@@ -11,7 +11,9 @@ module Data.RedBlackTree.BinaryTree (
 
   redBlackTreeInsertWith,
   zipperInsertWith,
-  zipperInsert
+  zipperInsert,
+  zipperDInsertWith,
+  zipperDInsert,
   ) where
 
 import Data.Maybe
@@ -43,7 +45,7 @@ data TreeSide = LeftBranch | RightBranch deriving (Show, Eq, Ord)
 -- is the @TreeSide@ of the focused node relative to the parent. Second argument
 -- is the parent's node. The third argument is the sibling tree of the focused
 -- node.
-data TreeDirection a = TreeDirection !TreeSide a (BinaryTree a)
+data TreeDirection a = TreeDirection TreeSide a (BinaryTree a)
   deriving (Show, Eq, Ord)
 
 -- List of @TreeDirection@
@@ -70,6 +72,16 @@ getRoot (parent:ancestors) tree =
               then Branch tree parentNode rt 
               else Branch lt parentNode tree
           in parent' `seq` getRoot ancestors parent'
+
+getRootD :: (Ord a) => TreeDirections a -> BinaryTree a -> BinaryTree a
+getRootD [] root = root
+getRootD (parent:ancestors) tree =
+  let TreeDirection treeSide parentNode sibling = parent
+      parent' = 
+          if treeSide == LeftBranch 
+        then Branch tree parentNode sibling
+        else Branch sibling parentNode tree
+  in parent' `seq` getRootD ancestors parent'
 
 {-# SPECIALIZE binaryTreeInsertWith :: (Ord a) => MergeFn (RBNode a) -> BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
@@ -112,6 +124,30 @@ zipperInsertWith mergeFn = _zipperInsertWith mergeFn []
 zipperInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 zipperInsert = zipperInsertWith const
 
+_zipperDInsertWith :: (Ord a) => MergeFn a -> [TreeDirection a] -> BinaryTree a -> a -> BinaryTree a
+_zipperDInsertWith _ directions Leaf newValue = getRootD directions newBranch
+  where newBranch = Branch Leaf newValue Leaf
+_zipperDInsertWith mergeFn directions (Branch lt pValue rt) newValue 
+  | newValue < pValue =
+    let newDirection = TreeDirection LeftBranch pValue rt
+        directions' = newDirection:directions
+    in  newDirection `seq` _zipperDInsertWith mergeFn directions' lt newValue
+
+  | newValue > pValue =
+    let newDirection = TreeDirection RightBranch pValue lt
+        directions' = newDirection:directions
+    in  newDirection `seq` _zipperDInsertWith mergeFn directions' rt newValue
+
+  | otherwise =
+    let mergedValue = mergeFn pValue newValue
+        updatedTree = Branch lt mergedValue rt 
+    in  updatedTree `seq` getRootD directions updatedTree 
+
+zipperDInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
+zipperDInsertWith mergeFn = _zipperDInsertWith mergeFn ([] :: TreeDirections a) 
+
+zipperDInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
+zipperDInsert = zipperDInsertWith const
 
 {-# SPECIALIZE binaryTreeInsert :: Ord a => BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
