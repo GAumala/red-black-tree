@@ -15,9 +15,9 @@ getBalancedValues originalValues = centerValue `seq` centerValue:remainder
         (centerValue:rvalues) = drop breakPoint originalValues
         remainder = getBalancedValues lvalues ++ getBalancedValues rvalues
 
-insertToBalancedTree :: RedBlackTree2 Int -> Int -> RedBlackTree2 Int
+insertToBalancedTree :: BinaryTree Int -> Int -> BinaryTree Int
 insertToBalancedTree tree newValue = newTree
-  where newTree = redBlackTreeInsert tree newValue
+  where newTree = zipperInsert tree newValue
 
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing

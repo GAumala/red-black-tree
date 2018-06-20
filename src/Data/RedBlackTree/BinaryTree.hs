@@ -10,7 +10,8 @@ module Data.RedBlackTree.BinaryTree (
   binaryTreeFind,
 
   redBlackTreeInsertWith,
-  redBlackTreeInsert,
+  zipperInsertWith,
+  zipperInsert
   ) where
 
 import Data.Maybe
@@ -53,6 +54,23 @@ type TreeDirections a = [TreeDirection a]
 data TreeBranch a = TreeBranch (BinaryTree a) !a (BinaryTree a)
   deriving (Eq, Ord)
 
+getRoot :: (Ord a) => [BinaryTree a] -> BinaryTree a -> BinaryTree a
+getRoot [] root = root
+getRoot (parent:ancestors) tree = 
+  case parent of 
+    Leaf -> Leaf -- this should never happen
+
+    Branch lt parentNode rt ->
+      case tree of 
+        Leaf -> getRoot ancestors parent
+
+        Branch _ childNode _ ->
+          let parent' = -- assume parent & child nodes can't ever be equal
+                if childNode < parentNode 
+              then Branch tree parentNode rt 
+              else Branch lt parentNode tree
+          in parent' `seq` getRoot ancestors parent'
+
 {-# SPECIALIZE binaryTreeInsertWith :: (Ord a) => MergeFn (RBNode a) -> BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
 binaryTreeInsertWith _ Leaf newItem = Branch Leaf newItem Leaf
@@ -70,6 +88,30 @@ binaryTreeInsertWith mergeFn tree newItem
     in Branch leftTree mergedItem rightTree
 
   where Branch leftTree currentItem rightTree = tree 
+
+_zipperInsertWith :: (Ord a) => MergeFn a -> [BinaryTree a] -> BinaryTree a -> a -> BinaryTree a
+_zipperInsertWith _ ancestors Leaf newValue = getRoot ancestors newBranch
+  where newBranch = Branch Leaf newValue Leaf
+_zipperInsertWith mergeFn ancestors (Branch lt pValue rt) newValue 
+  | newValue < pValue =
+    parentTree `seq` _zipperInsertWith mergeFn (parentTree:ancestors) lt newValue
+
+  | newValue > pValue =
+    parentTree `seq` _zipperInsertWith mergeFn (parentTree:ancestors) rt newValue
+
+  | otherwise =
+    let mergedValue = mergeFn pValue newValue
+        parentTree' =  Branch lt mergedValue rt 
+    in  parentTree' `seq` getRoot ancestors parentTree' 
+
+  where parentTree = Branch lt pValue rt
+
+zipperInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
+zipperInsertWith mergeFn = _zipperInsertWith mergeFn [] 
+
+zipperInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
+zipperInsert = zipperInsertWith const
+
 
 {-# SPECIALIZE binaryTreeInsert :: Ord a => BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
