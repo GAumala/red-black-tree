@@ -105,10 +105,88 @@ mergeRBNodes mergeFn (RBNode existingColor x) (RBNode _ y) =
   RBNode existingColor (mergeFn x y)
 
 redBlackTreeInsertWith :: (Ord a) => MergeFn a -> RedBlackTree2 a -> a -> RedBlackTree2 a
-redBlackTreeInsertWith mergeFn tree newItem = 
-  let newRBNode = RBNode Red newItem
-      mergeRBNodesFn = mergeRBNodes mergeFn
-  in binaryTreeInsertWith mergeRBNodesFn tree newRBNode 
+redBlackTreeInsertWith _ Leaf n = Branch Leaf (RBNode Black n) Leaf
+redBlackTreeInsertWith mergeFn (Branch lc gNode rc) newValue
+  | newValue < gValue =  
+    case lc of
+      Leaf -> 
+        let lc' = Branch Leaf (RBNode Red newValue) Leaf
+        in Branch lc' (RBNode gColor gValue) rc
+
+      Branch llc pNode lrc 
+        | newValue < pValue ->
+          case llc of
+            Leaf -> 
+              if pColor == Red then
+                case rc of
+                  Leaf -> 
+                    let 
+                        g' = Branch lrc (RBNode Red gValue) Leaf
+                        n' = Branch Leaf (RBNode Red newValue) Leaf
+                    in  Branch n' (RBNode Black pValue) g'   
+
+                  Branch rlc (RBNode uColor uValue) rrc ->
+                    if uColor == Red then
+                      let u' = Branch rlc (RBNode Black uValue) rrc
+                          n' = Branch Leaf (RBNode Red newValue) Leaf
+                          p' = Branch n' (RBNode Black pValue) lrc
+                      in Branch p' (RBNode Red gValue) u'
+                    else 
+                      let u' = Branch rlc (RBNode uColor uValue) rrc
+                          g' = Branch lrc (RBNode Red gValue) u'
+                          n' = Branch Leaf (RBNode Red newValue) Leaf
+                      in Branch n' (RBNode Black pValue) g'
+              else
+                let n' = Branch Leaf (RBNode Red newValue) Leaf
+                    pNode = RBNode pColor pValue
+                    lc' = Branch  n' pNode lrc  
+                in Branch lc' gNode rc  
+            _ ->
+              redBlackTreeInsertWith mergeFn (Branch llc pNode lrc) newValue
+
+        | newValue > pValue ->
+          case lrc of
+            Leaf ->
+              if pColor == Red then
+                case rc of 
+                  Leaf ->
+                    let g' = Branch Leaf (RBNode Red gValue) Leaf
+                        n' = Branch Leaf (RBNode Red newValue) Leaf
+                    in Branch n' (RBNode Black pValue) g'
+
+                  Branch rlc (RBNode uColor uValue) rrc ->
+                    if uColor == Red then
+                      let u' = Branch rlc (RBNode Black uValue) rrc
+                          n' = Branch Leaf (RBNode Red newValue) Leaf
+                          p' = Branch n' (RBNode Black pValue) lrc
+                      in Branch p' (RBNode Red gValue) u'
+                    else 
+                      let u' = Branch rlc (RBNode uColor uValue) rrc
+                          g' = Branch Leaf (RBNode Red gValue) u'
+                          n' = Branch llc (RBNode Red newValue) Leaf
+                      in Branch n' (RBNode Black pValue) g'
+              else 
+                let n' = Branch Leaf (RBNode Red newValue) Leaf
+                    lc' = Branch llc pNode n'  
+                in Branch lc' gNode rc  
+
+            _ ->
+              redBlackTreeInsertWith mergeFn (Branch llc pNode lrc) newValue
+
+
+        | otherwise -> 
+          let mergedValue = mergeFn pValue newValue
+              lc' = Branch llc (RBNode pColor mergedValue) lrc
+          in  Branch lc' gNode rc
+
+
+        where RBNode pColor pValue = pNode     
+
+  | otherwise =  
+    let RBNode gColor gValue = gNode
+        mergedValue = mergeFn gValue newValue
+    in  Branch lc (RBNode gColor mergedValue) rc
+  where RBNode gColor gValue = gNode
 
 redBlackTreeInsert :: (Ord a) => RedBlackTree2 a -> a -> RedBlackTree2 a
 redBlackTreeInsert = redBlackTreeInsertWith const
