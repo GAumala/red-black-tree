@@ -10,8 +10,7 @@ module Data.RedBlackTree.BinaryTree (
   binaryTreeFind,
 
   redBlackTreeInsertWith,
-  zipperInsertWith,
-  zipperInsert,
+  redBlackTreeInsert,
   zipperDInsertWith,
   zipperDInsert,
   ) where
@@ -83,6 +82,144 @@ getRootD (parent:ancestors) tree =
         else Branch sibling parentNode tree
   in parent' `seq` getRootD ancestors parent'
 
+getRBRoot :: (Ord a) => [RedBlackTree2 a] -> RedBlackTree2 a -> RedBlackTree2 a
+getRBRoot [] root = 
+  case root of
+    Leaf -> Leaf
+    Branch lt (RBNode _ rootValue) rt -> 
+      Branch lt (RBNode Black rootValue) rt
+
+getRBRoot (p:ancestors) n = 
+  case p of 
+    Leaf -> Leaf -- this should never happen
+
+    Branch pLeft pNode pRight ->
+      case n of 
+        Leaf -> getRBRoot ancestors p
+
+        Branch nLeft nNode nRight 
+          | nColor == Red -> 
+            case ancestors of 
+              [] -> 
+                  if nValue < pValue
+                then Branch n (RBNode Black pValue) pRight
+                else Branch pLeft (RBNode Black pValue) n
+                
+
+              [ Leaf ] -> Leaf -- this should never happen
+
+              (( Branch gLeft gNode gRight ):gAncestors) ->
+                if pValue < gValue then
+                  if nValue < pValue then
+                    if pColor == Black then
+                      getRBRoot gAncestors g
+                    else case gRight of
+                      Leaf -> 
+                        let g' = Branch pRight (RBNode Red gValue) Leaf 
+                            p' = Branch n (RBNode Black pValue) g'
+                        in getRBRoot gAncestors p' 
+
+                      Branch uLeft uNode uRight ->
+                        let RBNode uColor uValue = uNode
+                            u = Branch uLeft uNode uRight
+                        in 
+                          if uColor == Black then    
+                            let g' = Branch pRight (RBNode Red gValue) u 
+                                p' = Branch n (RBNode Black pValue) g'
+                            in getRBRoot gAncestors p' 
+                          else
+                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                                u' = Branch uLeft (RBNode Black uValue) uRight
+                                g' = Branch p' (RBNode Red gValue) u'
+                            in  getRBRoot gAncestors g'
+
+                  else 
+                    if pColor == Black then 
+                      getRBRoot gAncestors g
+                    else case gRight of
+                      Leaf -> 
+                        let g' = Branch nRight (RBNode Red gValue) Leaf 
+                            p' = Branch pLeft (RBNode Red pValue) nLeft
+                            n' = Branch p' (RBNode Black nValue) g'
+                        in  getRBRoot gAncestors n' 
+
+                      Branch uLeft uNode uRight ->
+                        let RBNode uColor uValue = uNode
+                            u = Branch uLeft uNode uRight
+                        in 
+                          if uColor == Black then    
+                            let g' = Branch nRight (RBNode Red gValue) u 
+                                p' = Branch pLeft (RBNode Red pValue) nLeft
+                                n' = Branch p' (RBNode Black nValue) g'
+                            in  getRBRoot gAncestors n' 
+                          else
+                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                                u' = Branch uLeft (RBNode Black uValue) uRight
+                                g' = Branch p' (RBNode Red gValue) u'
+                            in  getRBRoot gAncestors g'
+
+                else 
+                  if nValue > pValue then
+                    if pColor == Black then
+                      getRBRoot gAncestors g
+                    else case gLeft of
+                      Leaf -> 
+                        let g' = Branch Leaf (RBNode Red gValue) pLeft 
+                            p' = Branch g' (RBNode Black pValue) n
+                        in getRBRoot gAncestors p' 
+                      
+                      Branch uLeft uNode uRight -> 
+                        let RBNode uColor uValue = uNode
+                            u = Branch uLeft uNode uRight
+                        in 
+                          if uColor == Black then
+                            let g' = Branch u (RBNode Red gValue) pLeft 
+                                p' = Branch g' (RBNode Black pValue) n
+                            in getRBRoot gAncestors p' 
+                          else
+                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                                u' = Branch uLeft (RBNode Black uValue) uRight
+                                g' = Branch u' (RBNode Red gValue) p'
+                            in  getRBRoot gAncestors g'
+                  else 
+                    if pColor == Black then 
+                      getRBRoot gAncestors g
+                    else case gLeft of
+                      Leaf -> 
+                        let g' = Branch Leaf (RBNode Red gValue) nLeft 
+                            p' = Branch nRight (RBNode Red pValue) pRight
+                            n' = Branch g' (RBNode Black nValue) p'
+                        in  getRBRoot gAncestors n' 
+                            
+                      Branch uLeft uNode uRight ->
+                        let RBNode uColor uValue = uNode
+                            u = Branch uLeft uNode uRight
+                        in 
+                          if uColor == Black then    
+                            let g' = Branch u (RBNode Red gValue) nLeft 
+                                p' = Branch nRight (RBNode Red pValue) pRight
+                                n' = Branch g' (RBNode Black nValue) p'
+                            in  getRBRoot gAncestors n' 
+                          else
+                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                                u' = Branch uLeft (RBNode Black uValue) uRight
+                                g' = Branch u' (RBNode Red gValue) p'
+                            in  getRBRoot gAncestors g'
+
+                where RBNode gColor gValue = gNode
+                      g = Branch gLeft gNode gRight
+            
+
+          | otherwise -> 
+            let p' = -- assume p & child nodes can't ever be equal
+                  if nNode < pNode 
+                then Branch n pNode pRight 
+                else Branch pLeft pNode n
+            in p' `seq` getRoot ancestors p'
+
+            where RBNode pColor pValue = pNode
+                  RBNode nColor nValue = nNode
+
 {-# SPECIALIZE binaryTreeInsertWith :: (Ord a) => MergeFn (RBNode a) -> BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
 binaryTreeInsertWith _ Leaf newItem = Branch Leaf newItem Leaf
@@ -101,28 +238,29 @@ binaryTreeInsertWith mergeFn tree newItem
 
   where Branch leftTree currentItem rightTree = tree 
 
-_zipperInsertWith :: (Ord a) => MergeFn a -> [BinaryTree a] -> BinaryTree a -> a -> BinaryTree a
-_zipperInsertWith _ ancestors Leaf newValue = getRoot ancestors newBranch
-  where newBranch = Branch Leaf newValue Leaf
-_zipperInsertWith mergeFn ancestors (Branch lt pValue rt) newValue 
+_redBlackTreeInsertWith :: (Ord a) => MergeFn a -> [RedBlackTree2 a] -> RedBlackTree2 a -> a -> RedBlackTree2 a
+_redBlackTreeInsertWith _ ancestors Leaf newValue = getRBRoot ancestors newBranch
+  where newBranch = Branch Leaf (RBNode Red newValue) Leaf
+_redBlackTreeInsertWith mergeFn ancestors (Branch pLeft pNode pRight) newValue 
   | newValue < pValue =
-    parentTree `seq` _zipperInsertWith mergeFn (parentTree:ancestors) lt newValue
+    parentTree `seq` _redBlackTreeInsertWith mergeFn (parentTree:ancestors) pLeft newValue
 
   | newValue > pValue =
-    parentTree `seq` _zipperInsertWith mergeFn (parentTree:ancestors) rt newValue
+    parentTree `seq` _redBlackTreeInsertWith mergeFn (parentTree:ancestors) pRight newValue
 
   | otherwise =
     let mergedValue = mergeFn pValue newValue
-        parentTree' =  Branch lt mergedValue rt 
-    in  parentTree' `seq` getRoot ancestors parentTree' 
+        parentTree' =  Branch pLeft (RBNode pColor mergedValue) pRight 
+    in  parentTree' `seq` getRBRoot ancestors parentTree' 
 
-  where parentTree = Branch lt pValue rt
+  where parentTree = Branch pLeft pNode pRight
+        RBNode pColor pValue = pNode
 
-zipperInsertWith :: (Ord a) => MergeFn a -> BinaryTree a -> a -> BinaryTree a
-zipperInsertWith mergeFn = _zipperInsertWith mergeFn [] 
+redBlackTreeInsertWith :: (Ord a) => MergeFn a -> RedBlackTree2 a -> a -> RedBlackTree2 a
+redBlackTreeInsertWith mergeFn = _redBlackTreeInsertWith mergeFn [] 
 
-zipperInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
-zipperInsert = zipperInsertWith const
+redBlackTreeInsert :: (Ord a) => RedBlackTree2 a -> a -> RedBlackTree2 a
+redBlackTreeInsert = redBlackTreeInsertWith const
 
 _zipperDInsertWith :: (Ord a) => MergeFn a -> [TreeDirection a] -> BinaryTree a -> a -> BinaryTree a
 _zipperDInsertWith _ directions Leaf newValue = getRootD directions newBranch
@@ -182,89 +320,4 @@ mergeRBNodes :: MergeFn a -> (RBNode a -> RBNode a -> RBNode a)
 mergeRBNodes mergeFn (RBNode existingColor x) (RBNode _ y) = 
   RBNode existingColor (mergeFn x y)
 
-redBlackTreeInsertWith :: (Ord a) => MergeFn a -> RedBlackTree2 a -> a -> RedBlackTree2 a
-redBlackTreeInsertWith _ Leaf n = Branch Leaf (RBNode Black n) Leaf
-redBlackTreeInsertWith mergeFn (Branch lc gNode rc) newValue
-  | newValue < gValue =  
-    case lc of
-      Leaf -> 
-        let lc' = Branch Leaf (RBNode Red newValue) Leaf
-        in Branch lc' (RBNode gColor gValue) rc
 
-      Branch llc pNode lrc 
-        | newValue < pValue ->
-          case llc of
-            Leaf -> 
-              if pColor == Red then
-                case rc of
-                  Leaf -> 
-                    let 
-                        g' = Branch lrc (RBNode Red gValue) Leaf
-                        n' = Branch Leaf (RBNode Red newValue) Leaf
-                    in  Branch n' (RBNode Black pValue) g'   
-
-                  Branch rlc (RBNode uColor uValue) rrc ->
-                    if uColor == Red then
-                      let u' = Branch rlc (RBNode Black uValue) rrc
-                          n' = Branch Leaf (RBNode Red newValue) Leaf
-                          p' = Branch n' (RBNode Black pValue) lrc
-                      in Branch p' (RBNode Red gValue) u'
-                    else 
-                      let u' = Branch rlc (RBNode uColor uValue) rrc
-                          g' = Branch lrc (RBNode Red gValue) u'
-                          n' = Branch Leaf (RBNode Red newValue) Leaf
-                      in Branch n' (RBNode Black pValue) g'
-              else
-                let n' = Branch Leaf (RBNode Red newValue) Leaf
-                    pNode = RBNode pColor pValue
-                    lc' = Branch  n' pNode lrc  
-                in Branch lc' gNode rc  
-            _ ->
-              redBlackTreeInsertWith mergeFn (Branch llc pNode lrc) newValue
-
-        | newValue > pValue ->
-          case lrc of
-            Leaf ->
-              if pColor == Red then
-                case rc of 
-                  Leaf ->
-                    let g' = Branch Leaf (RBNode Red gValue) Leaf
-                        n' = Branch Leaf (RBNode Red newValue) Leaf
-                    in Branch n' (RBNode Black pValue) g'
-
-                  Branch rlc (RBNode uColor uValue) rrc ->
-                    if uColor == Red then
-                      let u' = Branch rlc (RBNode Black uValue) rrc
-                          n' = Branch Leaf (RBNode Red newValue) Leaf
-                          p' = Branch n' (RBNode Black pValue) lrc
-                      in Branch p' (RBNode Red gValue) u'
-                    else 
-                      let u' = Branch rlc (RBNode uColor uValue) rrc
-                          g' = Branch Leaf (RBNode Red gValue) u'
-                          n' = Branch llc (RBNode Red newValue) Leaf
-                      in Branch n' (RBNode Black pValue) g'
-              else 
-                let n' = Branch Leaf (RBNode Red newValue) Leaf
-                    lc' = Branch llc pNode n'  
-                in Branch lc' gNode rc  
-
-            _ ->
-              redBlackTreeInsertWith mergeFn (Branch llc pNode lrc) newValue
-
-
-        | otherwise -> 
-          let mergedValue = mergeFn pValue newValue
-              lc' = Branch llc (RBNode pColor mergedValue) lrc
-          in  Branch lc' gNode rc
-
-
-        where RBNode pColor pValue = pNode     
-
-  | otherwise =  
-    let RBNode gColor gValue = gNode
-        mergedValue = mergeFn gValue newValue
-    in  Branch lc (RBNode gColor mergedValue) rc
-  where RBNode gColor gValue = gNode
-
-redBlackTreeInsert :: (Ord a) => RedBlackTree2 a -> a -> RedBlackTree2 a
-redBlackTreeInsert = redBlackTreeInsertWith const

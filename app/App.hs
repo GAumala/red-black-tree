@@ -15,9 +15,9 @@ getBalancedValues originalValues = centerValue `seq` centerValue:remainder
         (centerValue:rvalues) = drop breakPoint originalValues
         remainder = getBalancedValues lvalues ++ getBalancedValues rvalues
 
-insertToBalancedTree :: BinaryTree Int -> Int -> BinaryTree Int
+insertToBalancedTree :: RedBlackTree2 Int -> Int -> RedBlackTree2 Int
 insertToBalancedTree tree newValue = newTree
-  where newTree = zipperDInsert tree newValue
+  where newTree = redBlackTreeInsert tree newValue
 
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing
@@ -52,5 +52,5 @@ runSequenceTest ints =
 
 main :: IO ()
 main = putStrLn $ runBinaryTreeTest items
-  where items = getBalancedValues $ [1..(truncate 1e5)] :: [Int]
+  where items = [1..(truncate 1e5)] :: [Int]
 
