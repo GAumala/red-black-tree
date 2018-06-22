@@ -15,10 +15,6 @@ getBalancedValues originalValues = centerValue `seq` centerValue:remainder
         (centerValue:rvalues) = drop breakPoint originalValues
         remainder = getBalancedValues lvalues ++ getBalancedValues rvalues
 
-insertToBalancedTree :: RedBlackTree Int -> Int -> RedBlackTree Int
-insertToBalancedTree tree newValue = newTree
-  where newTree = redBlackTreeInsert tree newValue
-
 leftMostValue :: BinaryTree a -> Maybe a
 leftMostValue Leaf = Nothing
 leftMostValue (Branch Leaf value _) = Just value
@@ -29,10 +25,19 @@ rightMostValue Leaf = Nothing
 rightMostValue (Branch _ value Leaf) = Just value
 rightMostValue (Branch _ _ rtree) = rightMostValue rtree
 
+runRedBlackTreeTest :: [Int] -> String
+runRedBlackTreeTest items =
+    let 
+        tree = foldl' redBlackTreeInsert Leaf items
+        leftMost = leftMostValue tree
+    in
+      "constructed rb tree of with left most value:  " ++ (show leftMost)
+
 runBinaryTreeTest :: [Int] -> String
 runBinaryTreeTest items =
     let 
-        tree = foldl' insertToBalancedTree Leaf items
+        balancedItems = getBalancedValues items
+        tree = foldl' binaryTreeInsert Leaf balancedItems
         leftMost = leftMostValue tree
     in
       "constructed tree of with left most value:  " ++ (show leftMost)
@@ -51,6 +56,6 @@ runSequenceTest ints =
       "constructed sequence. last triple is " ++ (show lastTriple)
 
 main :: IO ()
-main = putStrLn $ runBinaryTreeTest items
+main = putStrLn $ runRedBlackTreeTest items
   where items = [1..(truncate 1e5)] :: [Int]
 

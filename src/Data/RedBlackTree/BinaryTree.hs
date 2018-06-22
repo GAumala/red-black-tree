@@ -69,6 +69,26 @@ getRoot (parent:ancestors) tree =
               else Branch lt parentNode tree
           in parent' `seq` getRoot ancestors parent'
 
+getRBRoot :: (Ord a) => [RedBlackTree a] -> RedBlackTree a -> RedBlackTree a
+getRBRoot [] root = root
+getRBRoot (parent:ancestors) tree = 
+  case parent of 
+    Leaf -> Leaf -- this should never happen
+
+    Branch lt parentNode rt ->
+      case tree of 
+        Leaf -> getRBRoot ancestors parent
+
+        Branch _ childNode _ ->
+          let RBNode childColor childValue = childNode
+              RBNode parentColor parentValue = parentNode
+              parent' = -- assume parent & child nodes can't ever be equal
+                if childValue < parentValue 
+              then Branch tree parentNode rt 
+              else Branch lt parentNode tree
+          in parent' `seq` getRBRoot ancestors parent'
+
+
 getRootD :: (Ord a) => TreeDirections a -> BinaryTree a -> BinaryTree a
 getRootD [] root = root
 getRootD (parent:ancestors) tree =
@@ -79,14 +99,14 @@ getRootD (parent:ancestors) tree =
         else Branch sibling parentNode tree
   in parent' `seq` getRootD ancestors parent'
 
-getRBRoot :: (Ord a) => [RedBlackTree a] -> RedBlackTree a -> RedBlackTree a
-getRBRoot [] root = 
+performRBRotations :: (Ord a) => [RedBlackTree a] -> RedBlackTree a -> RedBlackTree a
+performRBRotations [] root = 
   case root of
     Leaf -> Leaf
     Branch lt (RBNode _ rootValue) rt -> 
       Branch lt (RBNode Black rootValue) rt
 
-getRBRoot (p:ancestors) n = 
+performRBRotations (p:ancestors) n = 
   case p of 
     Leaf -> Leaf -- this should never happen
 
@@ -130,7 +150,7 @@ getRBRoot (p:ancestors) n =
                             let p' = Branch n (RBNode Black pValue) pRight
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch p' (RBNode Red gValue) u'
-                            in  getRBRoot gAncestors g'
+                            in  performRBRotations gAncestors g'
 
                   else 
                     if pColor == Black then 
@@ -157,7 +177,7 @@ getRBRoot (p:ancestors) n =
                             let p' = Branch pLeft (RBNode Black pValue) n
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch p' (RBNode Red gValue) u'
-                            in  getRBRoot gAncestors g'
+                            in  performRBRotations gAncestors g'
 
                 else 
                   if nValue > pValue then
@@ -183,7 +203,7 @@ getRBRoot (p:ancestors) n =
                             let p' = Branch pLeft (RBNode Black pValue) n
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch u' (RBNode Red gValue) p'
-                            in  getRBRoot gAncestors g'
+                            in  performRBRotations gAncestors g'
                   else 
                     if pColor == Black then 
                       let p' = Branch n pNode pRight
@@ -209,7 +229,7 @@ getRBRoot (p:ancestors) n =
                             let p' = Branch n (RBNode Black pValue) pRight
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch u' (RBNode Red gValue) p'
-                            in  getRBRoot gAncestors g'
+                            in  performRBRotations gAncestors g'
 
                 where RBNode gColor gValue = gNode
                       g = Branch gLeft gNode gRight
@@ -244,7 +264,7 @@ binaryTreeInsertWith mergeFn tree newItem
   where Branch leftTree currentItem rightTree = tree 
 
 _redBlackTreeInsertWith :: (Ord a) => MergeFn a -> [RedBlackTree a] -> RedBlackTree a -> a -> RedBlackTree a
-_redBlackTreeInsertWith _ ancestors Leaf newValue = getRBRoot ancestors newBranch
+_redBlackTreeInsertWith _ ancestors Leaf newValue = performRBRotations ancestors newBranch
   where newBranch = Branch Leaf (RBNode Red newValue) Leaf
 _redBlackTreeInsertWith mergeFn ancestors (Branch pLeft pNode pRight) newValue 
   | newValue < pValue =
