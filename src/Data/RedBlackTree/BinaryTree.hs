@@ -1,7 +1,6 @@
 module Data.RedBlackTree.BinaryTree (
   BinaryTree (Leaf, Branch),
-  RedBlackTree2,
-  TreeBranch (TreeBranch),
+  RedBlackTree,
   TreeDirection (TreeDirection),
   TreeDirections,
 
@@ -50,11 +49,6 @@ data TreeDirection a = TreeDirection TreeSide a (BinaryTree a)
 -- List of @TreeDirection@
 type TreeDirections a = [TreeDirection a]
 
--- Holds the data of a @BinaryTree@ created with the @Branch@ constructor. Useful
--- type when you want to guarantee that the element is not a @Leaf@
-data TreeBranch a = TreeBranch (BinaryTree a) !a (BinaryTree a)
-  deriving (Eq, Ord)
-
 getRoot :: (Ord a) => [BinaryTree a] -> BinaryTree a -> BinaryTree a
 getRoot [] root = root
 getRoot (parent:ancestors) tree = 
@@ -82,7 +76,7 @@ getRootD (parent:ancestors) tree =
         else Branch sibling parentNode tree
   in parent' `seq` getRootD ancestors parent'
 
-getRBRoot :: (Ord a) => [RedBlackTree2 a] -> RedBlackTree2 a -> RedBlackTree2 a
+getRBRoot :: (Ord a) => [RedBlackTree a] -> RedBlackTree a -> RedBlackTree a
 getRBRoot [] root = 
   case root of
     Leaf -> Leaf
@@ -212,10 +206,10 @@ getRBRoot (p:ancestors) n =
 
           | otherwise -> 
             let p' = -- assume p & child nodes can't ever be equal
-                  if nNode < pNode 
+                  if nValue < pValue 
                 then Branch n pNode pRight 
                 else Branch pLeft pNode n
-            in p' `seq` getRoot ancestors p'
+            in getRoot ancestors p'
 
             where RBNode pColor pValue = pNode
                   RBNode nColor nValue = nNode
@@ -238,7 +232,7 @@ binaryTreeInsertWith mergeFn tree newItem
 
   where Branch leftTree currentItem rightTree = tree 
 
-_redBlackTreeInsertWith :: (Ord a) => MergeFn a -> [RedBlackTree2 a] -> RedBlackTree2 a -> a -> RedBlackTree2 a
+_redBlackTreeInsertWith :: (Ord a) => MergeFn a -> [RedBlackTree a] -> RedBlackTree a -> a -> RedBlackTree a
 _redBlackTreeInsertWith _ ancestors Leaf newValue = getRBRoot ancestors newBranch
   where newBranch = Branch Leaf (RBNode Red newValue) Leaf
 _redBlackTreeInsertWith mergeFn ancestors (Branch pLeft pNode pRight) newValue 
@@ -256,10 +250,10 @@ _redBlackTreeInsertWith mergeFn ancestors (Branch pLeft pNode pRight) newValue
   where parentTree = Branch pLeft pNode pRight
         RBNode pColor pValue = pNode
 
-redBlackTreeInsertWith :: (Ord a) => MergeFn a -> RedBlackTree2 a -> a -> RedBlackTree2 a
+redBlackTreeInsertWith :: (Ord a) => MergeFn a -> RedBlackTree a -> a -> RedBlackTree a
 redBlackTreeInsertWith mergeFn = _redBlackTreeInsertWith mergeFn [] 
 
-redBlackTreeInsert :: (Ord a) => RedBlackTree2 a -> a -> RedBlackTree2 a
+redBlackTreeInsert :: (Ord a) => RedBlackTree a -> a -> RedBlackTree a
 redBlackTreeInsert = redBlackTreeInsertWith const
 
 _zipperDInsertWith :: (Ord a) => MergeFn a -> [TreeDirection a] -> BinaryTree a -> a -> BinaryTree a
@@ -304,20 +298,9 @@ data RBColor = Red | Black
   deriving (Eq, Ord, Show)
 
 data RBNode a = RBNode RBColor a
-  deriving (Show)
-
-instance (Eq a) => Eq (RBNode a) where
-  (RBNode _ x) == (RBNode _ y) = x == y
-
-instance (Ord a) => Ord (RBNode a) where
-  (RBNode _ x) <= (RBNode _ y) = x <= y
+  deriving (Eq, Ord, Show)
 
 type MergeFn a = a -> a -> a
 
-type RedBlackTree2 a = BinaryTree (RBNode a)
-
-mergeRBNodes :: MergeFn a -> (RBNode a -> RBNode a -> RBNode a)
-mergeRBNodes mergeFn (RBNode existingColor x) (RBNode _ y) = 
-  RBNode existingColor (mergeFn x y)
-
+type RedBlackTree a = BinaryTree (RBNode a)
 
