@@ -1,6 +1,9 @@
+
 module Data.RedBlackTree.BinaryTree (
   BinaryTree (Leaf, Branch),
   RedBlackTree,
+  RBColor(Red, Black),
+  RBNode (RBNode),
   TreeDirection (TreeDirection),
   TreeDirections,
 
@@ -106,7 +109,9 @@ getRBRoot (p:ancestors) n =
                 if pValue < gValue then
                   if nValue < pValue then
                     if pColor == Black then
-                      getRBRoot gAncestors g
+                      let p' = Branch n pNode pRight
+                          g' = Branch p gNode gRight
+                      in  getRBRoot gAncestors g'
                     else case gRight of
                       Leaf -> 
                         let g' = Branch pRight (RBNode Red gValue) Leaf 
@@ -122,14 +127,16 @@ getRBRoot (p:ancestors) n =
                                 p' = Branch n (RBNode Black pValue) g'
                             in getRBRoot gAncestors p' 
                           else
-                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                            let p' = Branch n (RBNode Black pValue) pRight
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch p' (RBNode Red gValue) u'
                             in  getRBRoot gAncestors g'
 
                   else 
                     if pColor == Black then 
-                      getRBRoot gAncestors g
+                      let p' = Branch pLeft pNode n
+                          g' = Branch p gNode gRight
+                      in  getRBRoot gAncestors g'
                     else case gRight of
                       Leaf -> 
                         let g' = Branch nRight (RBNode Red gValue) Leaf 
@@ -147,7 +154,7 @@ getRBRoot (p:ancestors) n =
                                 n' = Branch p' (RBNode Black nValue) g'
                             in  getRBRoot gAncestors n' 
                           else
-                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                            let p' = Branch pLeft (RBNode Black pValue) n
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch p' (RBNode Red gValue) u'
                             in  getRBRoot gAncestors g'
@@ -155,12 +162,14 @@ getRBRoot (p:ancestors) n =
                 else 
                   if nValue > pValue then
                     if pColor == Black then
-                      getRBRoot gAncestors g
+                      let p' = Branch pLeft pNode n
+                          g' = Branch gLeft gNode p'
+                      in  getRBRoot gAncestors g'
                     else case gLeft of
                       Leaf -> 
                         let g' = Branch Leaf (RBNode Red gValue) pLeft 
                             p' = Branch g' (RBNode Black pValue) n
-                        in getRBRoot gAncestors p' 
+                        in  getRBRoot gAncestors p' 
                       
                       Branch uLeft uNode uRight -> 
                         let RBNode uColor uValue = uNode
@@ -171,13 +180,15 @@ getRBRoot (p:ancestors) n =
                                 p' = Branch g' (RBNode Black pValue) n
                             in getRBRoot gAncestors p' 
                           else
-                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                            let p' = Branch pLeft (RBNode Black pValue) n
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch u' (RBNode Red gValue) p'
                             in  getRBRoot gAncestors g'
                   else 
                     if pColor == Black then 
-                      getRBRoot gAncestors g
+                      let p' = Branch n pNode pRight
+                          g' = Branch gLeft gNode p'
+                      in  getRBRoot gAncestors g' 
                     else case gLeft of
                       Leaf -> 
                         let g' = Branch Leaf (RBNode Red gValue) nLeft 
@@ -195,7 +206,7 @@ getRBRoot (p:ancestors) n =
                                 n' = Branch g' (RBNode Black nValue) p'
                             in  getRBRoot gAncestors n' 
                           else
-                            let p' = Branch pLeft (RBNode Black pValue) pRight
+                            let p' = Branch n (RBNode Black pValue) pRight
                                 u' = Branch uLeft (RBNode Black uValue) uRight
                                 g' = Branch u' (RBNode Red gValue) p'
                             in  getRBRoot gAncestors g'
@@ -209,7 +220,7 @@ getRBRoot (p:ancestors) n =
                   if nValue < pValue 
                 then Branch n pNode pRight 
                 else Branch pLeft pNode n
-            in getRoot ancestors p'
+            in p' `seq` getRBRoot ancestors p'
 
             where RBNode pColor pValue = pNode
                   RBNode nColor nValue = nNode
@@ -281,7 +292,7 @@ zipperDInsertWith mergeFn = _zipperDInsertWith mergeFn ([] :: TreeDirections a)
 zipperDInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 zipperDInsert = zipperDInsertWith const
 
-{-# SPECIALIZE binaryTreeInsert :: Ord a => BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
+{-# SPECIALIZE binaryTreeInsert :: (Ord a) => BinaryTree (RBNode a) -> (RBNode a) -> BinaryTree (RBNode a) #-}
 binaryTreeInsert :: (Ord a) => BinaryTree a -> a -> BinaryTree a
 binaryTreeInsert = binaryTreeInsertWith const
 
