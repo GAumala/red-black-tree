@@ -8,7 +8,7 @@ license-file:        LICENSE
 author:              Gabriel Aumala
 maintainer:          example@example.com
 copyright:           2017 Gabriel Aumala
-category:            Data Structure
+category:            Data Structures
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
